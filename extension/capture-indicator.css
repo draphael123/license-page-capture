@@ -1,0 +1,33 @@
+#license-capture-indicator {
+  all: initial;
+  position: fixed;
+  z-index: 2147483647;
+  top: 18px;
+  right: 18px;
+  max-width: 320px;
+  padding: 11px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: #10243e;
+  box-shadow: 0 12px 38px rgba(6, 20, 37, 0.3);
+  color: #f8fbff;
+  font: 600 13px/1.35 "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+#license-capture-indicator.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#license-capture-indicator[data-tone="success"] { background: #0f695d; }
+#license-capture-indicator[data-tone="warning"] { background: #815719; }
+#license-capture-indicator[data-tone="error"] { background: #8b2e38; }
+
+@media (prefers-reduced-motion: reduce) {
+  #license-capture-indicator { transition: none; }
+}

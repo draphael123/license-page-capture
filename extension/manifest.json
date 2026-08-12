@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "License Page Capture",
+  "version": "0.1.0",
+  "description": "Captures each licensing application page before you continue.",
+  "permissions": ["activeTab", "downloads", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "License Page Capture",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["capture-indicator.css"],
+      "run_at": "document_start"
+    }
+  ]
+}

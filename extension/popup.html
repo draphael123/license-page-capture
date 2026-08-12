@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>License Page Capture</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <div class="mark" aria-hidden="true"><span></span></div>
+        <div>
+          <p class="eyebrow">Application record</p>
+          <h1>Page Capture</h1>
+        </div>
+        <div id="statusChip" class="status-chip">Off</div>
+      </header>
+
+      <section id="setupView" class="panel">
+        <p class="intro">Save each page automatically before you continue.</p>
+        <form id="sessionForm">
+          <label>
+            Case label
+            <input id="caseLabel" name="caseLabel" maxlength="70" placeholder="Example: UT-RN-001" required>
+          </label>
+          <div class="field-row">
+            <label>
+              State
+              <input id="jurisdiction" name="jurisdiction" maxlength="40" placeholder="Utah" required>
+            </label>
+            <label>
+              License
+              <input id="licenseType" name="licenseType" maxlength="40" placeholder="RN" required>
+            </label>
+          </div>
+          <label class="check-row">
+            <input id="skipSensitive" name="skipSensitive" type="checkbox" checked>
+            <span><strong>Pause on sensitive screens</strong><small>Skips passwords, SSNs, payment, and verification codes.</small></span>
+          </label>
+          <button class="primary" type="submit">Start capturing</button>
+        </form>
+      </section>
+
+      <section id="activeView" class="panel" hidden>
+        <div class="case-summary">
+          <p id="activeCase" class="case-name"></p>
+          <p id="activeMeta" class="case-meta"></p>
+        </div>
+        <div class="count-block">
+          <strong id="captureCount">0</strong>
+          <span>pages saved</span>
+        </div>
+        <div id="sequence" class="sequence" aria-label="Captured page sequence"></div>
+        <p id="emptyState" class="empty-state">Your page sequence will appear here.</p>
+        <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+        <div class="actions">
+          <button id="captureNow" class="secondary" type="button">Capture this page</button>
+          <button id="stopSession" class="quiet" type="button">Finish session</button>
+        </div>
+      </section>
+
+      <footer>Saved locally to your Downloads folder</footer>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
