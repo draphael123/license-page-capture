@@ -1,3 +1,5 @@
+import { CaptureDemo } from "./CaptureDemo";
+
 const steps = [
   {
     number: "01",
@@ -79,22 +81,23 @@ export default function Home() {
           <a href="#how-it-works">How it works</a>
           <a href="#privacy">Privacy</a>
           <a href="#install">Install</a>
-          <a className="nav-cta" href="/license-page-capture-v0.1.0.zip" download>Download v0.1</a>
+          <a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report an issue</a>
+          <a className="nav-cta" href="/license-page-capture-v0.2.0.zip" download>Download v0.2</a>
         </div>
       </nav>
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <p className="kicker"><span>●</span> Local-first browser extension</p>
+          <p className="kicker"><span>●</span> Developer preview · pilot before production use</p>
           <h1>Every page.<br /><em>Already captured.</em></h1>
           <p className="hero-text">
             Page Capture saves a screenshot just before you advance through a licensing application—so your audit trail builds itself while you work.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="/license-page-capture-v0.1.0.zip" download>Download extension <span>↓</span></a>
+            <a className="button primary" href="/license-page-capture-v0.2.0.zip" download>Download v0.2 <span>↓</span></a>
             <a className="button text-button" href="#install">See installation <span>↘</span></a>
           </div>
-          <p className="compatibility">Built for Chrome and Microsoft Edge · Developer preview</p>
+          <p className="compatibility">Chrome and Microsoft Edge · Updated August 13, 2026</p>
         </div>
 
         <div className="hero-demo" aria-label="Illustration of Page Capture in use">
@@ -111,6 +114,11 @@ export default function Home() {
           </div>
           <CaptureStrip compact />
         </div>
+      </section>
+
+      <section className="demo-section">
+        <div className="demo-intro"><p className="overline">Try it here</p><h2>Advance a mock application.<br />Watch the record build.</h2><p>This simulation shows the intended behavior without installing anything or using real provider information.</p></div>
+        <CaptureDemo />
       </section>
 
       <section className="proof-band" aria-label="Product highlights">
@@ -149,7 +157,7 @@ export default function Home() {
           <div className="privacy-copy">
             <p className="overline light">Privacy by default</p>
             <h2>Screenshots stay<br />on this computer.</h2>
-            <p>Licensing applications can contain personal information. Page Capture is intentionally local-first: no accounts, analytics, cloud storage, or remote transmission.</p>
+            <p>Page Capture performs no analytics or remote transmission. Files go to your browser’s Downloads location, which may itself be synchronized by OneDrive or another service.</p>
           </div>
           <div className="safeguards">
             {safeguards.map((item) => <div key={item}><span>✓</span>{item}</div>)}
@@ -170,7 +178,7 @@ export default function Home() {
           <li><span>3</span><div><strong>Load the folder</strong><p>Choose Load unpacked and select the extracted extension folder.</p></div></li>
           <li><span>4</span><div><strong>Start a pilot</strong><p>Reload the licensing portal, open Page Capture, create a case, and work normally.</p></div></li>
         </ol>
-        <a className="button primary download-wide" href="/license-page-capture-v0.1.0.zip" download>Download Page Capture v0.1 <span>↓</span></a>
+        <a className="button primary download-wide" href="/license-page-capture-v0.2.0.zip" download>Download Page Capture v0.2 <span>↓</span></a>
       </section>
 
       <section className="section faq" id="faq">
@@ -183,13 +191,13 @@ export default function Home() {
       <section className="closing">
         <p className="overline light">A cleaner application record</p>
         <h2>Stop stopping<br />to take screenshots.</h2>
-        <a className="button inverse" href="/license-page-capture-v0.1.0.zip" download>Start with v0.1 <span>→</span></a>
+        <a className="button inverse" href="/license-page-capture-v0.2.0.zip" download>Start with v0.2 <span>→</span></a>
       </section>
 
       <footer className="site-footer">
-        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview · v0.1.0</small></span></div>
+        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview · v0.2.0</small></span></div>
         <p>Local-first tooling for licensing operations.</p>
-        <div><a href="#privacy">Privacy</a><a href="#install">Installation</a><a href="https://github.com/draphael123/license-page-capture">Source</a></div>
+        <div><a href="/privacy">Privacy</a><a href="/security">Security</a><a href="/changelog">Changelog</a><a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report issue</a><a href="https://github.com/draphael123/license-page-capture">Source</a></div>
       </footer>
     </main>
   );

@@ -13,6 +13,11 @@ It is designed for licensing teams that currently stop and manually capture ever
 - Shows a compact capture ledger in the extension popup.
 - Supports manual capture for unusual portals.
 - Pauses automatically when recognizable sensitive fields are present.
+- Stops navigation when capture fails in safe mode.
+- Isolates and recovers sessions per application tab.
+- Locks each session to its starting portal domain.
+- Accepts portal-specific navigation labels.
+- Exports a JSON capture ledger.
 
 ## What it does not do
 
@@ -53,7 +58,7 @@ Downloads/
 
 ## Privacy and security
 
-Screenshots can contain regulated or sensitive personal information. Page Capture stores files locally and performs no remote transmission, analytics, or cloud synchronization. Its sensitive-field detection is a helpful safeguard, not a substitute for organizational security controls.
+Screenshots can contain regulated or sensitive personal information. Page Capture performs no remote transmission or analytics. It writes to the browser's Downloads location, which may be synchronized by OneDrive, backup software, or an employer-managed device. Sensitive-field detection is a safeguard, not a substitute for organizational security controls.
 
 Recommended operating rules:
 
@@ -79,13 +84,13 @@ Requires Node.js 22.13 or later.
 ```bash
 npm install
 npm run dev
-npm run build
+npm test
 ```
 
 ## Current limitations
 
 - Screenshot capture covers the visible viewport only.
-- Navigation detection is based on control text.
+- Navigation detection uses visible text and accessibility labels; unusual portals may need a custom label or adapter.
 - Some portals use custom event handling that may require a site-specific adapter.
 - Browser-internal pages and extension-store pages cannot be captured.
 - The developer preview must be loaded as an unpacked extension.
@@ -101,4 +106,4 @@ npm run build
 
 ## License
 
-Private developer preview. Add an open-source license before public distribution if external reuse is intended.
+MIT. See [LICENSE](LICENSE).

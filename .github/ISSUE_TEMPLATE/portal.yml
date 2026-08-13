@@ -1,0 +1,48 @@
+name: Portal compatibility report
+description: Report a navigation or capture problem using synthetic details only.
+title: "[Portal] "
+labels: ["portal-compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach real screenshots or include provider information, credentials, license numbers, identity documents, payment information, or application answers.
+  - type: input
+    id: board
+    attributes:
+      label: Board or portal
+      placeholder: Utah DOPL nursing
+    validations:
+      required: true
+  - type: input
+    id: domain
+    attributes:
+      label: Portal domain
+      placeholder: licensing.example.gov
+    validations:
+      required: true
+  - type: input
+    id: label
+    attributes:
+      label: Navigation control label
+      placeholder: Save and proceed
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: What happened?
+      options:
+        - No screenshot was saved
+        - Navigation was blocked
+        - Navigation occurred before capture
+        - Duplicate screenshot
+        - Sensitive screen was captured
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: synthetic
+    attributes:
+      label: Reproduction steps using synthetic data
+    validations:
+      required: true
