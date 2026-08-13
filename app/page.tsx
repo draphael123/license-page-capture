@@ -1,5 +1,3 @@
-import { CaptureDemo } from "./CaptureDemo";
-
 const steps = [
   {
     number: "01",
@@ -81,6 +79,7 @@ export default function Home() {
           <a href="#how-it-works">How it works</a>
           <a href="#privacy">Privacy</a>
           <a href="#install">Install</a>
+          <a href="/test-lab">Test lab</a>
           <a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report an issue</a>
           <a className="nav-cta" href="/license-page-capture-v0.5.0.zip" download>Download v0.5</a>
         </div>
@@ -116,9 +115,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="demo-section">
-        <div className="demo-intro"><p className="overline">Capture test lab</p><h2>Three workflows.<br />No login or real data.</h2><p>Test licensing, credentialing, and insurance-style material with long pages, varied controls, and an intentionally sensitive step that should be skipped.</p></div>
-        <CaptureDemo />
+      <section className="test-lab-teaser">
+        <div><p className="overline">Capture test lab</p><h2>Test it before<br />you trust it.</h2></div>
+        <div><p>Open a dedicated workspace with licensing, credentialing, and insurance template forms. No login, submissions, or real personal information.</p><a className="button primary" href="/test-lab">Open the test lab <span>→</span></a></div>
       </section>
 
       <section className="proof-band" aria-label="Product highlights">
