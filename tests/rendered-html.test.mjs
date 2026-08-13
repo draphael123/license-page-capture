@@ -69,7 +69,8 @@ test("ships accessible guided product videos", async () => {
   assert.match(product, /See the record build itself/);
   assert.match(product, /Simulated product demo/);
   assert.match(product, /kind="captions"/);
-  await Promise.all(["overview.webm","capture.webm","sensitive.webm","record.webm","overview-poster.png","overview.vtt"].map((name) => access(new URL(`../public/demos/${name}`, import.meta.url))));
+  assert.match(product, /Six moments to watch/);
+  await Promise.all(["overview.webm","capture.webm","sensitive.webm","record.webm","fullpage.webm","duplicate.webm","newsession.webm","overview-poster.png","overview.vtt"].map((name) => access(new URL(`../public/demos/${name}`, import.meta.url))));
 });
 
 test("includes a Vercel server entry for application routes", async () => {
