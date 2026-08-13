@@ -31,10 +31,14 @@ test("server-renders the dedicated no-login test lab", async () => {
   const response = await render("/test-lab");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Choose a workflow and start testing/);
-  assert.match(html, /Provider credentialing/);
-  assert.match(html, /Insurance enrollment/);
+  assert.match(html, /Choose a complete test application/);
   assert.match(html, /fictional data only/i);
+
+  const demoSource = await readFile(new URL("../app/CaptureDemo.tsx", import.meta.url), "utf8");
+  assert.match(demoSource, /TEST \{String\(index \+ 1\)\.padStart\(2, "0"\)\}/);
+  assert.match(demoSource, /Nurse licensing/);
+  assert.match(demoSource, /Provider credentialing/);
+  assert.match(demoSource, /Insurance enrollment/);
 });
 
 test("ships the extension package and social preview", async () => {

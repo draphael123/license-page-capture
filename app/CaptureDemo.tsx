@@ -3,12 +3,14 @@ import { useState } from "react";
 
 type Field = { label: string; value: string; kind?: "text" | "textarea" | "select" | "password" };
 type DemoPage = { title: string; note: string; fields: Field[]; action?: string; sensitive?: boolean; long?: boolean };
-type Workflow = { name: string; eyebrow: string; pages: DemoPage[] };
+type Workflow = { name: string; eyebrow: string; description: string; coverage: string[]; pages: DemoPage[] };
 
 const workflows: Record<string, Workflow> = {
   licensing: {
     name: "Nurse licensing",
     eyebrow: "MOCK STATE LICENSING PORTAL",
+    description: "A state-board style application covering education, licenses, employment, identity verification, and final review.",
+    coverage: ["6 pages", "Long forms", "Sensitive skip"],
     pages: [
       { title: "Applicant profile", note: "Basic identity and contact information.", fields: [{ label: "Legal name", value: "Taylor Example" }, { label: "Preferred email", value: "taylor@example.invalid" }, { label: "Phone", value: "555-0100" }], action: "Save & continue" },
       { title: "Education history", note: "A realistic page with several record fields.", fields: [{ label: "Institution", value: "Example State University" }, { label: "Program", value: "Bachelor of Science in Nursing", kind: "select" }, { label: "Attendance dates", value: "August 2016 – May 2020" }, { label: "Clinical hours", value: "960" }], action: "Next step", long: true },
@@ -21,6 +23,8 @@ const workflows: Record<string, Workflow> = {
   credentialing: {
     name: "Provider credentialing",
     eyebrow: "MOCK CREDENTIALING WORKSPACE",
+    description: "A healthcare credentialing record with locations, professional history, documents, verification, and committee review.",
+    coverage: ["6 pages", "Dropdowns", "Document checklist"],
     pages: [
       { title: "Provider record", note: "Fictional demographic information.", fields: [{ label: "Provider name", value: "Jordan Example, NP" }, { label: "Provider type", value: "Nurse Practitioner", kind: "select" }, { label: "Internal record ID", value: "PROV-TEST-104" }], action: "Continue" },
       { title: "Practice locations", note: "Multiple location details on one page.", fields: [{ label: "Primary practice", value: "100 Example Avenue" }, { label: "City and state", value: "Sample City, UT" }, { label: "Service type", value: "Telehealth and outpatient" }, { label: "Additional location", value: "200 Test Street" }], action: "Save and next", long: true },
@@ -33,6 +37,8 @@ const workflows: Record<string, Workflow> = {
   insurance: {
     name: "Insurance enrollment",
     eyebrow: "MOCK ENROLLMENT PORTAL",
+    description: "An organizational enrollment workflow with ownership, service locations, attestations, and payment protection.",
+    coverage: ["6 pages", "Full-page test", "Payment skip"],
     pages: [
       { title: "Organization profile", note: "Fictional business information.", fields: [{ label: "Organization", value: "Example Health Group" }, { label: "Entity type", value: "Professional practice", kind: "select" }, { label: "Reference number", value: "ENROLL-TEST-22" }], action: "Next" },
       { title: "Ownership details", note: "Structured organizational information.", fields: [{ label: "Owner name", value: "Casey Example" }, { label: "Ownership percentage", value: "100%" }, { label: "Effective date", value: "January 1, 2024" }, { label: "Disclosure notes", value: "Fictional record for extension testing only.", kind: "textarea" }], action: "Save & continue", long: true },
@@ -59,9 +65,10 @@ export function CaptureDemo() {
   function advance() { const status = current.sensitive ? "skipped" : "saved"; setEvents((items) => [...items, { label: current.title, status }]); setPage((value) => Math.min(value + 1, workflow.pages.length - 1)); }
 
   return <div className="demo-lab" id="demo">
-    <div className="scenario-picker" aria-label="Choose a test workflow">
-      <div><span>Choose test material</span><strong>All information below is fictional.</strong></div>
-      <div>{Object.entries(workflows).map(([key, item]) => <button className={key === workflowKey ? "selected" : ""} key={key} onClick={() => reset(key)}>{item.name}</button>)}</div>
+    <div className="scenario-catalog" aria-label="Available application tests">
+      {Object.entries(workflows).map(([key, item], index) => <button className={`scenario-card ${key === workflowKey ? "selected" : ""}`} key={key} onClick={() => reset(key)} aria-pressed={key === workflowKey}>
+        <span className="scenario-number">TEST {String(index + 1).padStart(2, "0")}</span><strong>{item.name}</strong><p>{item.description}</p><span className="scenario-tags">{item.coverage.map((tag) => <i key={tag}>{tag}</i>)}</span><b>{key === workflowKey ? "Selected" : "Run this test →"}</b>
+      </button>)}
     </div>
     <div className="live-demo">
       <div className="demo-top"><span><i /> Capture test lab · {workflow.name}</span><button onClick={() => reset()}>Reset workflow</button></div>

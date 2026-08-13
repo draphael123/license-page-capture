@@ -19,7 +19,7 @@ export default function TestLab() {
     </header>
 
     <section className="lab-workbench" id="forms">
-      <div className="lab-heading"><p className="overline">Template forms</p><h2>Choose a workflow and start testing.</h2><p>Everything shown here is invented for testing. The forms do not send, save, or submit their contents.</p></div>
+      <div className="lab-heading"><p className="overline">Application test catalog</p><h2>Choose a complete test application.</h2><p>Each listed test contains a separate multi-page template and tells you which capture behavior it exercises. Everything is fictional and nothing is submitted.</p></div>
       <CaptureDemo />
     </section>
 
