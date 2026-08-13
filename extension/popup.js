@@ -103,6 +103,12 @@ async function savePortalPreset(origin) {
   portalPresets[origin] = { customLabels: byId("customLabels").value.trim(), updatedAt: new Date().toISOString() };
   await chrome.storage.local.set({ portalPresets });
 }
+byId("clearPortalRule").addEventListener("click", async () => {
+  const tab = await activeTab(); if (!tab?.url?.startsWith("http")) return;
+  const { portalPresets = {} } = await chrome.storage.local.get("portalPresets");
+  delete portalPresets[new URL(tab.url).origin]; await chrome.storage.local.set({ portalPresets });
+  byId("customLabels").value = ""; await runPreflight(tab); setFeedback("setup", "Saved rule removed for this portal.");
+});
 
 async function runPreflight(tab) {
   const box = byId("preflight");
@@ -111,7 +117,7 @@ async function runPreflight(tab) {
     const result = await chrome.tabs.sendMessage(tab.id, { type: "PREFLIGHT", customLabels: byId("customLabels").value.split(",").map((item) => item.trim()).filter(Boolean) });
     const found = result.navigationControls?.length || 0;
     box.className = `preflight ${found ? "passed" : "warning"}`;
-    box.innerHTML = `<span>${found ? "✓" : "!"}</span><div><strong>${found ? "Ready to test" : "No Next control detected yet"}</strong><small>${result.sensitive ? "Sensitive fields are present and will be skipped." : found ? `${found} navigation control${found === 1 ? "" : "s"} detected.` : "You can add the button label below or start on the first form page."}</small></div>`;
+    box.innerHTML = `<span>${found ? "✓" : "!"}</span><div><strong>${found ? `Ready to test · ${result.confidence}% confidence` : "No Next control detected yet"}</strong><small>${result.inaccessibleFrames ? `${result.inaccessibleFrames} cross-origin frame${result.inaccessibleFrames === 1 ? "" : "s"} cannot be inspected.` : result.sensitive ? "Sensitive fields are present and will be skipped." : found ? `${found} navigation control${found === 1 ? "" : "s"} detected.` : "You can add the button label below or start on the first form page."}</small></div>`;
   } catch { box.className = "preflight failed"; box.innerHTML = "<span>!</span><div><strong>Reload this webpage</strong><small>The extension needs to reconnect before the test starts.</small></div>"; }
 }
 

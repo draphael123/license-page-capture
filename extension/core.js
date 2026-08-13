@@ -38,5 +38,22 @@
     return cleaned || fallback;
   }
 
-  return { DEFAULT_LABELS, SENSITIVE_TERMS, normalize, actionMatches, containsSensitive, cleanSegment };
+  function navigationConfidence({ recognizedAction = false, knownPortal = false, formPresent = false, sensitive = false, inaccessibleFrames = 0 } = {}) {
+    let score = 25;
+    if (recognizedAction) score += 35;
+    if (knownPortal) score += 15;
+    if (formPresent) score += 15;
+    if (sensitive) score -= 10;
+    score -= Math.min(30, Number(inaccessibleFrames || 0) * 15);
+    return Math.max(0, Math.min(100, score));
+  }
+
+  function pageFingerprint({ url = "", title = "", heading = "", formCount = 0, textLength = 0 } = {}) {
+    const source = [url, title, heading, formCount, Math.round(Number(textLength || 0) / 100) * 100].join("|");
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) { hash ^= source.charCodeAt(index); hash = Math.imul(hash, 16777619); }
+    return (hash >>> 0).toString(16);
+  }
+
+  return { DEFAULT_LABELS, SENSITIVE_TERMS, normalize, actionMatches, containsSensitive, cleanSegment, navigationConfidence, pageFingerprint };
 });

@@ -22,3 +22,15 @@ test("sanitizes download path segments", () => {
   assert.equal(core.cleanSegment("UT RN / Pilot #1"), "UT-RN-Pilot-1");
   assert.equal(core.cleanSegment(""), "Untitled");
 });
+test("scores risky portal transitions conservatively", () => {
+  assert.equal(core.navigationConfidence({ recognizedAction: true, knownPortal: true, formPresent: true }), 90);
+  assert.equal(core.navigationConfidence({ recognizedAction: true, inaccessibleFrames: 2 }), 30);
+  assert.equal(core.navigationConfidence({}), 25);
+});
+test("fingerprints meaningful page state changes", () => {
+  const first = core.pageFingerprint({ url: "https://example.test/step/1", title: "Profile", heading: "Profile", formCount: 1, textLength: 800 });
+  const repeat = core.pageFingerprint({ url: "https://example.test/step/1", title: "Profile", heading: "Profile", formCount: 1, textLength: 820 });
+  const next = core.pageFingerprint({ url: "https://example.test/step/2", title: "Education", heading: "Education", formCount: 1, textLength: 800 });
+  assert.equal(first, repeat);
+  assert.notEqual(first, next);
+});

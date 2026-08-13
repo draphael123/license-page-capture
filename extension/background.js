@@ -107,8 +107,10 @@ async function capturePage(tab, payload) {
     const folder = sessionFolder(session);
     const filename = `${folder}/${String(number).padStart(3, "0")}_${pageLabel}_${timestamp()}.png`;
     const downloadId = await chrome.downloads.download({ url: dataUrl, filename, conflictAction: "uniquify", saveAs: false });
+    const verified = await verifyDownload(downloadId);
+    if (!verified) throw new Error("Chrome did not confirm the screenshot download.");
     const preview = await createThumbnail(dataUrl);
-    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), preview };
+    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), preview, transactionId: payload.transactionId || "", transition: "pending", confidence: payload.confidence || 0, fingerprint: payload.fingerprint || "" };
     const updated = await updateSession(tabId, (s) => ({ ...addEvent(s, record), captureCount: number }));
     return { ok: true, record, session: updated };
   } catch (error) {
@@ -116,6 +118,27 @@ async function capturePage(tab, payload) {
     const updated = await updateSession(tabId, (s) => addEvent(s, { status: "failed", pageLabel: payload.pageLabel, url: payload.url, reason }));
     return { ok: false, reason, session: updated };
   }
+}
+
+async function verifyDownload(downloadId) {
+  if (!chrome.downloads.search) return true;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const [item] = await chrome.downloads.search({ id: downloadId });
+    if (item?.state === "complete" && Number(item.fileSize || item.totalBytes || 0) > 0) return true;
+    if (item?.state === "interrupted") return false;
+    await new Promise((resolve) => setTimeout(resolve, 180));
+  }
+  const [item] = await chrome.downloads.search({ id: downloadId });
+  return Boolean(item && item.state !== "interrupted");
+}
+
+async function confirmTransition(tabId, payload) {
+  const updated = await updateSession(tabId, (session) => ({
+    ...session,
+    lastConfirmedFingerprint: payload.afterFingerprint || session.lastConfirmedFingerprint || "",
+    events: (session.events || []).map((event) => event.transactionId === payload.transactionId ? ({ ...event, transition: payload.changed ? "confirmed" : "not-confirmed", transitionConfirmedAt: new Date().toISOString(), afterFingerprint: payload.afterFingerprint || "" }) : event)
+  }));
+  return { ok: true, session: updated };
 }
 
 async function resetSession(tabId) {
@@ -201,6 +224,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "STOP_SESSION": return { ok: true, session: await stopSession(tabId) };
       case "RESET_SESSION": return { ok: true, session: await resetSession(tabId) };
       case "CAPTURE_PAGE": return capturePage(sender.tab, message.payload || {});
+      case "CONFIRM_TRANSITION": return confirmTransition(tabId, message.payload || {});
       case "CAPTURE_VIEWPORT": return { ok: true, dataUrl: await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "png" }) };
       case "EXPORT_LEDGER": return exportLedger(tabId);
       case "EXPORT_SUMMARY": return exportSummary(tabId);
