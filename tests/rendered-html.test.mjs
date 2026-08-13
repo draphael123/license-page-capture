@@ -33,6 +33,15 @@ test("server-renders the dedicated no-login test lab", async () => {
   const html = await response.text();
   assert.match(html, /Choose a complete test application/);
   assert.match(html, /fictional data only/i);
+  assert.match(html, /Guided test checklist/);
+  assert.match(html, /Sample output/);
+  assert.match(html, /Behavior coverage/);
+  assert.match(html, /Compatibility/);
+  assert.match(html, /Privacy walkthrough/);
+  assert.match(html, /Troubleshooting/);
+  assert.match(html, /Report a test result/);
+  assert.match(html, /More ways to use it/);
+  assert.match(html, /Current release/);
 
   const demoSource = await readFile(new URL("../app/CaptureDemo.tsx", import.meta.url), "utf8");
   assert.match(demoSource, /TEST \{String\(index \+ 1\)\.padStart\(2, "0"\)\}/);
