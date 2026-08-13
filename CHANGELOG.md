@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — Production hardening
+
+- Added durable transaction states for every supported forward navigation.
+- Added image decoding, dimension, blank-image, and completed-download validation.
+- Require two independent signals before recording a transition as confirmed.
+- Added fail-closed anomaly recovery and interrupted-session reconciliation.
+- Portal profiles now expire after 30 days and retain reviewed safety settings.
+- Added a public readiness ledger describing the current production boundary.
+
 ## 0.5.0 - 2026-08-13
 
 - Added confirmed individual screenshot removal from the completed-test review.

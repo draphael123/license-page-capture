@@ -53,14 +53,14 @@ test("server-renders the dedicated no-login test lab", async () => {
 
 test("ships the extension package and social preview", async () => {
   await Promise.all([
-    access(new URL("../public/license-page-capture-v1.1.0.zip", import.meta.url)),
+    access(new URL("../public/license-page-capture-v1.2.0.zip", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../extension/manifest.json", import.meta.url)),
   ]);
   const manifest = JSON.parse(await readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"));
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "License Page Capture");
-  assert.equal(manifest.version, "1.1.0");
+  assert.equal(manifest.version, "1.2.0");
 });
 
 test("ships accessible guided product videos", async () => {

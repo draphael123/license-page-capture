@@ -106,6 +106,10 @@ async function requestCapture(force = false, transaction = {}) {
 
 function continueAction(action) { replayClicks.add(action); action.click(); }
 
+function transitionState(action) {
+  return { url: location.href, title: document.title, heading: document.querySelector("h1,h2,[role='heading']")?.textContent?.trim() || "", forms: document.forms.length, controls: deepActionElements().length, fingerprint: fingerprint(), actionConnected: Boolean(action?.isConnected) };
+}
+
 async function handleNavigationClick(event) {
   if (!session?.active || capturing) return;
   const action = findActionElement(event.target); if (!action) return;
@@ -114,13 +118,19 @@ async function handleNavigationClick(event) {
   const transactionId = crypto.randomUUID(); const beforeFingerprint = fingerprint(); const score = confidence(action);
   if (score < 45) { showIndicator(`Low-confidence transition (${score}%) · review before continuing`, "warning", true); capturing = false; return; }
   try {
+    const begun = await chrome.runtime.sendMessage({ type: "BEGIN_TRANSACTION", payload: { transactionId, beforeFingerprint, actionLabel: elementText(action), confidence: score } });
+    session = begun?.session || session;
+    if (!begun?.ok) { showIndicator(`Navigation stopped: ${begun?.reason || "review required"}`, "error", true); return; }
+    const beforeState = transitionState(action);
     const result = await requestCapture(false, { transactionId, fingerprint: beforeFingerprint, confidence: score }); session = result?.session || session;
     if (result?.ok) {
       showIndicator(result.duplicate ? `${session.captureCount} saved · duplicate ignored` : `Page verified · confidence ${score}%`, "success", true);
+      await chrome.runtime.sendMessage({ type: "RELEASE_TRANSACTION", payload: { transactionId } });
       continueAction(action);
-      const changed = await waitForTransition(beforeFingerprint);
-      const confirmation = await chrome.runtime.sendMessage({ type: "CONFIRM_TRANSITION", payload: { transactionId, changed, afterFingerprint: fingerprint() } });
+      const transition = await waitForTransition(beforeState, action);
+      const confirmation = await chrome.runtime.sendMessage({ type: "CONFIRM_TRANSITION", payload: { transactionId, ...transition, afterFingerprint: fingerprint() } });
       session = confirmation?.session || session;
+      const changed = Boolean(confirmation?.ok);
       showIndicator(changed ? `${session.captureCount} pages saved · transition confirmed` : "Page saved · navigation was not confirmed", changed ? "success" : "warning", true);
     }
     else if (result?.skipped) { showIndicator(`Capture active · sensitive page skipped`, "warning", true); continueAction(action); }
@@ -130,12 +140,13 @@ async function handleNavigationClick(event) {
   finally { capturing = false; }
 }
 
-function waitForTransition(before, timeout = 6500) {
+function waitForTransition(before, action, timeout = 6500) {
   return new Promise((resolve) => {
-    if (fingerprint() !== before) { resolve(true); return; }
-    const observer = new MutationObserver(() => { if (fingerprint() !== before) { observer.disconnect(); clearTimeout(timer); resolve(true); } });
+    const check = () => { const after = transitionState(action); const signals = { urlChanged: after.url !== before.url, fingerprintChanged: after.fingerprint !== before.fingerprint, headingChanged: after.heading !== before.heading, formChanged: after.forms !== before.forms, controlsChanged: after.controls !== before.controls, actionDetached: !after.actionConnected }; const signalCount = Object.values(signals).filter(Boolean).length; return { changed: signalCount >= 2, signalCount, signals }; };
+    if (check().changed) { resolve(check()); return; }
+    const observer = new MutationObserver(() => { const result = check(); if (result.changed) { observer.disconnect(); clearTimeout(timer); resolve(result); } });
     observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
-    const timer = setTimeout(() => { observer.disconnect(); resolve(fingerprint() !== before); }, timeout);
+    const timer = setTimeout(() => { observer.disconnect(); resolve(check()); }, timeout);
   });
 }
 
@@ -165,6 +176,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 chrome.runtime.sendMessage({ type: "GET_SESSION" }).then((result) => {
   session = result?.session || null;
   if (session?.active) {
+    if (session.blockedReason) { showIndicator(`Capture paused - ${session.blockedReason}`, "error", true); return; }
     const reconciled = !session.lastConfirmedFingerprint || session.lastConfirmedFingerprint === fingerprint();
     showIndicator(reconciled ? `${session.captureCount || 0} pages saved · session resumed` : `${session.captureCount || 0} pages saved · verify the current step`, reconciled ? "success" : "warning", true);
   }

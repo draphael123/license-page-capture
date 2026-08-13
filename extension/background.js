@@ -50,7 +50,18 @@ async function saveSessions(sessions) {
   return sessions;
 }
 
-async function getSession(tabId) { return (await getSessions())[String(tabId)] || null; }
+function reconcileSession(session) {
+  if (!session?.active) return session;
+  const stale = (session.transactions || []).find((item) => !["confirmed", "anomaly"].includes(item.state) && Date.now() - new Date(item.updatedAt || item.createdAt).getTime() > 15000);
+  if (!stale) return session;
+  return { ...session, blockedReason: "An interrupted page transition needs review.", transactions: (session.transactions || []).map((item) => item.id === stale.id ? { ...item, state: "anomaly", reason: "Extension or page interruption", updatedAt: new Date().toISOString() } : item) };
+}
+
+async function getSession(tabId) {
+  const sessions = await getSessions(); const key = String(tabId); const current = sessions[key] || null; const reconciled = reconcileSession(current);
+  if (reconciled !== current) { sessions[key] = reconciled; await saveSessions(sessions); }
+  return reconciled;
+}
 
 async function updateSession(tabId, updater) {
   const sessions = await getSessions();
@@ -74,7 +85,7 @@ async function startSession(payload) {
     customLabels: String(payload.customLabels || "").split(",").map((x) => x.trim()).filter(Boolean), retentionDays: Number(payload.retentionDays || 0),
     allowedOrigin: payload.allowedOrigin || "", startedAt: new Date().toISOString(),
     reviewAfter: Number(payload.retentionDays || 0) ? new Date(Date.now() + Number(payload.retentionDays) * 86400000).toISOString() : "",
-    captureCount: 0, events: []
+    captureCount: 0, events: [], transactions: [], blockedReason: ""
   };
   await updateSession(tabId, () => session);
   await notifyTab(tabId, session);
@@ -89,6 +100,30 @@ async function stopSession(tabId) {
 
 function addEvent(session, event) {
   return { ...session, events: [...(session.events || []), { id: crypto.randomUUID(), at: new Date().toISOString(), ...event }] };
+}
+
+async function beginTransaction(tabId, payload) {
+  const now = new Date().toISOString();
+  const transaction = { id: payload.transactionId, state: "frozen", createdAt: now, updatedAt: now, beforeFingerprint: payload.beforeFingerprint || "", actionLabel: payload.actionLabel || "Next", confidence: payload.confidence || 0 };
+  const session = await updateSession(tabId, (current) => current?.blockedReason ? current : ({ ...current, transactions: [...(current.transactions || []), transaction] }));
+  return session?.blockedReason ? { ok: false, blocked: true, reason: session.blockedReason, session } : { ok: true, session };
+}
+
+async function setTransactionState(tabId, transactionId, state, extra = {}) {
+  return updateSession(tabId, (session) => ({ ...session, transactions: (session.transactions || []).map((item) => item.id === transactionId ? { ...item, state, updatedAt: new Date().toISOString(), ...extra } : item) }));
+}
+
+async function validateScreenshot(dataUrl) {
+  if (!String(dataUrl || "").startsWith("data:image/")) return { ok: false, reason: "The browser did not return an image." };
+  if (typeof OffscreenCanvas === "undefined" || typeof createImageBitmap === "undefined") return { ok: true, mode: "download-confirmed" };
+  try {
+    const source = await createImageBitmap(await (await fetch(dataUrl)).blob()); const width = source.width; const height = source.height;
+    if (width < 200 || height < 120) { source.close(); return { ok: false, reason: "The screenshot dimensions were unexpectedly small." }; }
+    const canvas = new OffscreenCanvas(24, 16); const context = canvas.getContext("2d", { willReadFrequently: true }); context.drawImage(source, 0, 0, 24, 16); source.close();
+    const pixels = context.getImageData(0, 0, 24, 16).data; let min = 255, max = 0;
+    for (let i = 0; i < pixels.length; i += 4) { const light = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3; min = Math.min(min, light); max = Math.max(max, light); }
+    return max - min < 3 ? { ok: false, reason: "The screenshot appears blank." } : { ok: true, mode: "pixel-validated", width, height, luminanceRange: Math.round(max - min) };
+  } catch { return { ok: false, reason: "The screenshot image could not be decoded." }; }
 }
 
 async function capturePage(tab, payload) {
@@ -112,9 +147,12 @@ async function capturePage(tab, payload) {
   }
 
   try {
+    if (payload.transactionId) await setTransactionState(tabId, payload.transactionId, "capturing");
     let dataUrl = payload.dataUrl || await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
     const redacted = Boolean(payload.sensitive && session.redactSensitive && payload.sensitiveRects?.length);
     if (redacted) dataUrl = await redactDetectedFields(dataUrl, payload.sensitiveRects, payload.viewport);
+    const validation = await validateScreenshot(dataUrl);
+    if (!validation.ok) throw new Error(validation.reason);
     const number = session.captureCount + 1;
     const pageLabel = cleanSegment(payload.pageLabel || payload.title || tab.title, "Page");
     const folder = sessionFolder(session);
@@ -123,9 +161,10 @@ async function capturePage(tab, payload) {
     const verified = await verifyDownload(downloadId);
     if (!verified) throw new Error("Chrome did not confirm the screenshot download.");
     const preview = await createThumbnail(dataUrl);
-    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), redacted, preview, transactionId: payload.transactionId || "", transition: "pending", confidence: payload.confidence || 0, fingerprint: payload.fingerprint || "" };
+    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), redacted, preview, transactionId: payload.transactionId || "", transition: "pending", confidence: payload.confidence || 0, fingerprint: payload.fingerprint || "", validation };
     const updated = await updateSession(tabId, (s) => ({ ...addEvent(s, record), captureCount: number }));
-    return { ok: true, record, session: updated };
+    if (payload.transactionId) await setTransactionState(tabId, payload.transactionId, "stored", { validation });
+    return { ok: true, record, session: payload.transactionId ? await getSession(tabId) : updated };
   } catch (error) {
     const reason = error?.message || "Screenshot capture failed.";
     const updated = await updateSession(tabId, (s) => addEvent(s, { status: "failed", pageLabel: payload.pageLabel, url: payload.url, reason }));
@@ -146,13 +185,19 @@ async function verifyDownload(downloadId) {
 }
 
 async function confirmTransition(tabId, payload) {
+  const confirmed = Boolean(payload.changed && Number(payload.signalCount || 0) >= 2);
   const updated = await updateSession(tabId, (session) => ({
     ...session,
+    blockedReason: confirmed ? "" : "The page change could not be verified. Review the current page before resuming.",
     lastConfirmedFingerprint: payload.afterFingerprint || session.lastConfirmedFingerprint || "",
-    events: (session.events || []).map((event) => event.transactionId === payload.transactionId ? ({ ...event, transition: payload.changed ? "confirmed" : "not-confirmed", transitionConfirmedAt: new Date().toISOString(), afterFingerprint: payload.afterFingerprint || "" }) : event)
+    transactions: (session.transactions || []).map((item) => item.id === payload.transactionId ? ({ ...item, state: confirmed ? "confirmed" : "anomaly", signals: payload.signals || {}, updatedAt: new Date().toISOString() }) : item),
+    events: (session.events || []).map((event) => event.transactionId === payload.transactionId ? ({ ...event, transition: confirmed ? "confirmed" : "not-confirmed", transitionSignals: payload.signals || {}, transitionConfirmedAt: new Date().toISOString(), afterFingerprint: payload.afterFingerprint || "" }) : event)
   }));
-  return { ok: true, session: updated };
+  return { ok: confirmed, blocked: !confirmed, reason: updated.blockedReason, session: updated };
 }
+
+async function releaseTransaction(tabId, payload) { return { ok: true, session: await setTransactionState(tabId, payload.transactionId, "released") }; }
+async function resolveAnomaly(tabId) { const session = await updateSession(tabId, (current) => ({ ...current, blockedReason: "" })); await notifyTab(tabId, session); return { ok: true, session }; }
 
 async function resetSession(tabId) {
   const sessions = await getSessions();
@@ -253,7 +298,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "STOP_SESSION": return { ok: true, session: await stopSession(tabId) };
       case "RESET_SESSION": return { ok: true, session: await resetSession(tabId) };
       case "CAPTURE_PAGE": return capturePage(sender.tab, message.payload || {});
+      case "BEGIN_TRANSACTION": return beginTransaction(tabId, message.payload || {});
+      case "RELEASE_TRANSACTION": return releaseTransaction(tabId, message.payload || {});
       case "CONFIRM_TRANSITION": return confirmTransition(tabId, message.payload || {});
+      case "RESOLVE_ANOMALY": return resolveAnomaly(tabId);
       case "CAPTURE_VIEWPORT": return { ok: true, dataUrl: await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "png" }) };
       case "EXPORT_LEDGER": return exportLedger(tabId);
       case "EXPORT_SUMMARY": return exportSummary(tabId);

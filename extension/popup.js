@@ -50,6 +50,8 @@ function render(session) {
     byId("captureCount").textContent = session.captureCount || 0;
     const list = byId("activityList"); list.replaceChildren(...events.slice(-5).reverse().map(eventItem));
     byId("emptyState").hidden = events.length > 0;
+    byId("recoveryPanel").hidden = !session.blockedReason;
+    byId("recoveryReason").textContent = session.blockedReason || "";
   } else {
     byId("completeCase").textContent = session.caseLabel;
     byId("savedTotal").textContent = events.filter((event) => event.status === "saved").length;
@@ -107,11 +109,15 @@ async function loadPortalPreset(tab) {
   if (!tab?.url?.startsWith("http")) return;
   const { portalPresets = {} } = await chrome.storage.local.get("portalPresets");
   const preset = portalPresets[new URL(tab.url).origin];
-  if (preset?.customLabels) byId("customLabels").value = preset.customLabels;
+  if (!preset) return;
+  if (Date.now() - new Date(preset.verifiedAt || preset.updatedAt).getTime() > 30 * 86400000) { setFeedback("setup", "The saved portal profile is over 30 days old. Review the settings before testing.", "warning"); return; }
+  if (preset.customLabels) byId("customLabels").value = preset.customLabels;
+  if (preset.sensitiveMode) byId("sensitiveMode").value = preset.sensitiveMode;
+  byId("safeMode").checked = preset.safeMode !== false; byId("fullPage").checked = preset.fullPage === true;
 }
 async function savePortalPreset(origin) {
   const { portalPresets = {} } = await chrome.storage.local.get("portalPresets");
-  portalPresets[origin] = { customLabels: byId("customLabels").value.trim(), updatedAt: new Date().toISOString() };
+  portalPresets[origin] = { customLabels: byId("customLabels").value.trim(), sensitiveMode: byId("sensitiveMode").value, safeMode: byId("safeMode").checked, fullPage: byId("fullPage").checked, verifiedAt: new Date().toISOString(), expiresAfterDays: 30 };
   await chrome.storage.local.set({ portalPresets });
 }
 byId("clearPortalRule").addEventListener("click", async () => {
@@ -160,6 +166,7 @@ byId("captureNow").addEventListener("click", async () => {
 byId("stopSession").addEventListener("click", async () => {
   const tab = await activeTab(); const response = await message({ type: "STOP_SESSION", tabId: tab?.id }); render(response?.session);
 });
+byId("resolveAnomaly").addEventListener("click", async () => { const tab = await activeTab(); const response = await message({ type: "RESOLVE_ANOMALY", tabId: tab?.id }); if (response?.ok) { render(response.session); setFeedback("active", "Capture resumed. Continue only after confirming the current page is correct."); } });
 
 async function runSessionAction(type, view, success) {
   const tab = await activeTab(); const response = await message({ type, tabId: tab?.id });

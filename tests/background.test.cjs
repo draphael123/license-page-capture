@@ -104,3 +104,25 @@ test("adds notes and creates a pilot readiness report", async () => {
   const report = await h.send({ type: "EXPORT_READINESS", tabId: 12 });
   assert.equal(report.ok, true); assert.match(report.filename, /pilot-readiness-report\.html$/);
 });
+
+test("journals a capture transaction and fails closed when transition proof is weak", async () => {
+  const h = createHarness(); const tab = { id: 12, windowId: 2, title: "Profile", url: "https://board.test/app" };
+  await h.send({ type: "START_SESSION", payload: { tabId: 12, caseLabel: "TEST-1", jurisdiction: "UT", licenseType: "RN", allowedOrigin: "https://board.test" } });
+  let result = await h.send({ type: "BEGIN_TRANSACTION", payload: { transactionId: "tx-1", beforeFingerprint: "before", confidence: 80 } }, { tab });
+  assert.equal(result.ok, true); assert.equal(result.session.transactions[0].state, "frozen");
+  result = await h.send({ type: "CAPTURE_PAGE", payload: { transactionId: "tx-1", pageLabel: "Profile", url: tab.url, origin: "https://board.test" } }, { tab });
+  assert.equal(result.record.validation.ok, true); assert.equal(result.session.transactions[0].state, "stored");
+  await h.send({ type: "RELEASE_TRANSACTION", payload: { transactionId: "tx-1" } }, { tab });
+  result = await h.send({ type: "CONFIRM_TRANSITION", payload: { transactionId: "tx-1", changed: false, signalCount: 1, signals: { headingChanged: true } } }, { tab });
+  assert.equal(result.ok, false); assert.equal(result.session.transactions[0].state, "anomaly"); assert.ok(result.session.blockedReason);
+  result = await h.send({ type: "RESOLVE_ANOMALY" }, { tab }); assert.equal(result.ok, true); assert.equal(result.session.blockedReason, "");
+});
+
+test("requires two independent signals to confirm a transition", async () => {
+  const h = createHarness(); const tab = { id: 12, windowId: 2, title: "Profile", url: "https://board.test/app" };
+  await h.send({ type: "START_SESSION", payload: { tabId: 12, caseLabel: "TEST-1", jurisdiction: "UT", licenseType: "RN", allowedOrigin: "https://board.test" } });
+  await h.send({ type: "BEGIN_TRANSACTION", payload: { transactionId: "tx-2", confidence: 90 } }, { tab });
+  await h.send({ type: "CAPTURE_PAGE", payload: { transactionId: "tx-2", pageLabel: "Profile", url: tab.url, origin: "https://board.test" } }, { tab });
+  const result = await h.send({ type: "CONFIRM_TRANSITION", payload: { transactionId: "tx-2", changed: true, signalCount: 2, signals: { urlChanged: true, fingerprintChanged: true } } }, { tab });
+  assert.equal(result.ok, true); assert.equal(result.session.transactions[0].state, "confirmed"); assert.equal(result.session.events[0].transition, "confirmed");
+});
