@@ -28,7 +28,11 @@ function sensitiveReason() {
   return pageMatch ? `Sensitive page detected: ${pageMatch}` : "";
 }
 
-function pageLabel() { return document.querySelector("main h1, main h2, form h1, form h2, h1, h2")?.textContent?.trim() || document.title || "Application page"; }
+function pageLabel() {
+  const currentStep = document.querySelector("[aria-current='step'], .current-step, .active-step, [data-current-step]")?.textContent?.trim();
+  const heading = document.querySelector("main h1, form h1, main h2, form h2, h1, h2")?.textContent?.trim();
+  return currentStep || heading || document.title || "Application page";
+}
 
 function showIndicator(message, tone = "working", persistent = false) {
   let indicator = document.getElementById("license-capture-indicator");
@@ -37,9 +41,36 @@ function showIndicator(message, tone = "working", persistent = false) {
   clearTimeout(showIndicator.timer); if (!persistent) showIndicator.timer = setTimeout(() => indicator.classList.remove("is-visible"), 2800);
 }
 
+function wait(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+function loadImage(src) { return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; }); }
+
+async function captureFullPage() {
+  const root = document.documentElement; const body = document.body;
+  const height = Math.max(root.scrollHeight, body?.scrollHeight || 0);
+  const viewport = window.innerHeight; const width = window.innerWidth;
+  if (height <= viewport + 4) return null;
+  if (height * width > 45000000) throw new Error("This page is too large for full-page capture. Turn off entire-page capture for this test.");
+  const positions = []; for (let y = 0; y < height; y += viewport) positions.push(Math.min(y, height - viewport));
+  const uniquePositions = [...new Set(positions)]; const originalY = window.scrollY;
+  const indicator = document.getElementById("license-capture-indicator"); if (indicator) indicator.style.display = "none";
+  let canvas; let context; let scale;
+  try {
+    for (let index = 0; index < uniquePositions.length; index += 1) {
+      const y = uniquePositions[index]; window.scrollTo({ top: y, behavior: "instant" }); await wait(index ? 650 : 180);
+      const shot = await chrome.runtime.sendMessage({ type: "CAPTURE_VIEWPORT" });
+      if (!shot?.ok || !shot.dataUrl) throw new Error("A page section could not be captured.");
+      const image = await loadImage(shot.dataUrl); scale ||= image.width / width;
+      if (!canvas) { canvas = document.createElement("canvas"); canvas.width = image.width; canvas.height = Math.ceil(height * scale); context = canvas.getContext("2d"); }
+      context.drawImage(image, 0, Math.round(y * scale));
+    }
+    return canvas.toDataURL("image/png");
+  } finally { window.scrollTo({ top: originalY, behavior: "instant" }); if (indicator) indicator.style.display = ""; }
+}
+
 async function requestCapture(force = false) {
-  const reason = sensitiveReason();
-  return chrome.runtime.sendMessage({ type: "CAPTURE_PAGE", payload: { title: document.title, pageLabel: pageLabel(), url: location.href, origin: location.origin, sensitive: Boolean(reason), sensitiveReason: reason, force } });
+  const reason = sensitiveReason(); let dataUrl = null;
+  if (session?.fullPage && (!reason || force || !session.skipSensitive)) { showIndicator("Capturing the entire page…", "working", true); dataUrl = await captureFullPage(); }
+  return chrome.runtime.sendMessage({ type: "CAPTURE_PAGE", payload: { title: document.title, pageLabel: pageLabel(), url: location.href, origin: location.origin, sensitive: Boolean(reason), sensitiveReason: reason, force, dataUrl } });
 }
 
 function continueAction(action) { replayClicks.add(action); action.click(); }
@@ -51,8 +82,8 @@ async function handleNavigationClick(event) {
   event.preventDefault(); event.stopImmediatePropagation(); capturing = true; showIndicator("Saving this page…");
   try {
     const result = await requestCapture(false); session = result?.session || session;
-    if (result?.ok) { showIndicator(`Page ${result.record.number} saved`, "success"); continueAction(action); }
-    else if (result?.skipped) { showIndicator(`Capture paused: ${result.reason}`, "warning"); continueAction(action); }
+    if (result?.ok) { showIndicator(result.duplicate ? `${session.captureCount} saved · duplicate ignored` : `${session.captureCount} pages saved · capture active`, "success", true); continueAction(action); }
+    else if (result?.skipped) { showIndicator(`Capture active · sensitive page skipped`, "warning", true); continueAction(action); }
     else if (session?.safeMode) { showIndicator(`Navigation stopped: ${result?.reason || "capture failed"}`, "error", true); }
     else { showIndicator(`Capture missed: ${result?.reason || "unknown error"}`, "error"); continueAction(action); }
   } catch { if (session?.safeMode) showIndicator("Navigation stopped: capture failed", "error", true); else continueAction(action); }
@@ -68,8 +99,13 @@ document.addEventListener("keydown", (event) => {
 }, true);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "SESSION_STATE") { session = message.session; if (session?.active) showIndicator("Page Capture is active", "success"); sendResponse({ ok: true }); return; }
+  if (message?.type === "SESSION_STATE") { session = message.session; if (session?.active) showIndicator(`${session.captureCount || 0} pages saved · capture active`, "success", true); else document.getElementById("license-capture-indicator")?.remove(); sendResponse({ ok: true }); return; }
   if (message?.type === "CAPTURE_CURRENT") { requestCapture(Boolean(message.force)).then(sendResponse); return true; }
 });
 
-chrome.runtime.sendMessage({ type: "GET_SESSION" }).then((result) => { session = result?.session || null; }).catch(() => {});
+chrome.runtime.sendMessage({ type: "GET_SESSION" }).then((result) => { session = result?.session || null; if (session?.active) showIndicator(`${session.captureCount || 0} pages saved · capture active`, "success", true); }).catch(() => {});
+
+window.addEventListener("beforeunload", (event) => {
+  if (!session?.active || capturing) return;
+  event.preventDefault(); event.returnValue = "";
+});

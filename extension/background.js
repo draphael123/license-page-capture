@@ -6,6 +6,29 @@ const { cleanSegment } = PageCaptureCore;
 
 function timestamp(date = new Date()) { return date.toISOString().replace(/[:.]/g, "-"); }
 
+async function createThumbnail(dataUrl) {
+  if (typeof OffscreenCanvas === "undefined" || typeof createImageBitmap === "undefined") return "";
+  try {
+    const source = await createImageBitmap(await (await fetch(dataUrl)).blob());
+    const width = 180; const height = Math.max(70, Math.min(130, Math.round(source.height * (width / source.width))));
+    const canvas = new OffscreenCanvas(width, height); const context = canvas.getContext("2d");
+    context.drawImage(source, 0, 0, source.width, source.height, 0, 0, width, height); source.close();
+    const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: "image/jpeg", quality: 0.58 })).arrayBuffer());
+    let binary = ""; for (const byte of bytes) binary += String.fromCharCode(byte);
+    return `data:image/jpeg;base64,${btoa(binary)}`;
+  } catch { return ""; }
+}
+
+function sessionFolder(session) {
+  const started = timestamp(new Date(session.startedAt));
+  return [
+    "License Page Captures",
+    cleanSegment(session.caseLabel, "Case"),
+    `${cleanSegment(session.jurisdiction, "Jurisdiction")}_${cleanSegment(session.licenseType, "License")}`,
+    `${started}_session`
+  ].join("/");
+}
+
 async function getSessions() {
   const result = await chrome.storage.local.get(STORE_KEY);
   return result[STORE_KEY] || {};
@@ -36,7 +59,7 @@ async function startSession(payload) {
   const session = {
     version: 2, tabId, active: true, caseLabel: payload.caseLabel.trim(),
     jurisdiction: payload.jurisdiction.trim(), licenseType: payload.licenseType.trim(),
-    skipSensitive: payload.skipSensitive !== false, safeMode: payload.safeMode !== false,
+    skipSensitive: payload.skipSensitive !== false, safeMode: payload.safeMode !== false, fullPage: payload.fullPage === true,
     customLabels: String(payload.customLabels || "").split(",").map((x) => x.trim()).filter(Boolean),
     allowedOrigin: payload.allowedOrigin || "", startedAt: new Date().toISOString(),
     captureCount: 0, events: []
@@ -70,14 +93,21 @@ async function capturePage(tab, payload) {
     return { ok: false, skipped: true, reason: payload.sensitiveReason || "Sensitive fields detected", session: updated };
   }
 
+  const duplicateKey = `${payload.url || tab.url || ""}|${payload.pageLabel || payload.title || tab.title || ""}`;
+  const lastSaved = [...(session.events || [])].reverse().find((event) => event.status === "saved");
+  if (lastSaved?.duplicateKey === duplicateKey && Date.now() - new Date(lastSaved.at).getTime() < 5000) {
+    return { ok: true, duplicate: true, record: lastSaved, session };
+  }
+
   try {
-    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
+    const dataUrl = payload.dataUrl || await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
     const number = session.captureCount + 1;
     const pageLabel = cleanSegment(payload.pageLabel || payload.title || tab.title, "Page");
-    const folder = ["License Page Captures", cleanSegment(session.caseLabel, "Case"), `${cleanSegment(session.jurisdiction, "Jurisdiction")}_${cleanSegment(session.licenseType, "License")}`].join("/");
+    const folder = sessionFolder(session);
     const filename = `${folder}/${String(number).padStart(3, "0")}_${pageLabel}_${timestamp()}.png`;
     const downloadId = await chrome.downloads.download({ url: dataUrl, filename, conflictAction: "uniquify", saveAs: false });
-    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId };
+    const preview = await createThumbnail(dataUrl);
+    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), preview };
     const updated = await updateSession(tabId, (s) => ({ ...addEvent(s, record), captureCount: number }));
     return { ok: true, record, session: updated };
   } catch (error) {
@@ -87,6 +117,34 @@ async function capturePage(tab, payload) {
   }
 }
 
+async function resetSession(tabId) {
+  const sessions = await getSessions();
+  delete sessions[String(tabId)];
+  await saveSessions(sessions);
+  await notifyTab(tabId, null);
+  return null;
+}
+
+async function openSessionFolder(tabId) {
+  const session = await getSession(tabId);
+  const lastSaved = [...(session?.events || [])].reverse().find((event) => event.status === "saved" && event.downloadId);
+  if (!lastSaved) return { ok: false, reason: "Capture at least one page first." };
+  chrome.downloads.show(lastSaved.downloadId);
+  return { ok: true };
+}
+
+async function exportSummary(tabId) {
+  const session = await getSession(tabId);
+  if (!session) return { ok: false, reason: "No session was found." };
+  const escape = (value) => String(value || "").replace(/[&<>"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[character]));
+  const rows = (session.events || []).map((event) => `<tr><td>${escape(event.number || "-")}</td><td>${escape(event.pageLabel || "Page")}</td><td>${escape(event.status)}</td><td>${escape(event.at)}</td><td>${escape(event.url)}</td></tr>`).join("");
+  const html = `<!doctype html><meta charset="utf-8"><title>${escape(session.caseLabel)} capture summary</title><style>body{font:14px Arial,sans-serif;margin:40px;color:#17243b}h1{margin-bottom:4px}p{color:#536174}table{width:100%;border-collapse:collapse;margin-top:24px}th,td{text-align:left;border-bottom:1px solid #ccd5df;padding:10px;vertical-align:top}th{background:#eef3f8}</style><h1>${escape(session.caseLabel)}</h1><p>${escape(session.jurisdiction)} · ${escape(session.licenseType)} · Started ${escape(session.startedAt)}</p><table><thead><tr><th>#</th><th>Page</th><th>Status</th><th>Time</th><th>URL</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const url = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
+  const filename = `${sessionFolder(session)}/session-summary.html`;
+  const downloadId = await chrome.downloads.download({ url, filename, conflictAction: "uniquify", saveAs: false });
+  return { ok: true, downloadId, filename };
+}
+
 async function exportLedger(tabId) {
   const session = await getSession(tabId);
   if (!session) return { ok: false, reason: "No session was found." };
@@ -94,7 +152,7 @@ async function exportLedger(tabId) {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   const url = `data:application/json;base64,${btoa(binary)}`;
-  const filename = `License Page Captures/${cleanSegment(session.caseLabel, "Case")}/capture-ledger-${timestamp()}.json`;
+  const filename = `${sessionFolder(session)}/capture-ledger-${timestamp()}.json`;
   const downloadId = await chrome.downloads.download({ url, filename, conflictAction: "uniquify", saveAs: false });
   return { ok: true, downloadId, filename };
 }
@@ -106,8 +164,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "GET_SESSION": return { ok: true, session: await getSession(tabId) };
       case "START_SESSION": return { ok: true, session: await startSession(message.payload) };
       case "STOP_SESSION": return { ok: true, session: await stopSession(tabId) };
+      case "RESET_SESSION": return { ok: true, session: await resetSession(tabId) };
       case "CAPTURE_PAGE": return capturePage(sender.tab, message.payload || {});
+      case "CAPTURE_VIEWPORT": return { ok: true, dataUrl: await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "png" }) };
       case "EXPORT_LEDGER": return exportLedger(tabId);
+      case "EXPORT_SUMMARY": return exportSummary(tabId);
+      case "OPEN_SESSION_FOLDER": return openSessionFolder(tabId);
       default: return { ok: false, reason: "Unknown request." };
     }
   })().then(sendResponse).catch((error) => sendResponse({ ok: false, reason: error?.message || "Unexpected extension error." }));

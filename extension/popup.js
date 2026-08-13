@@ -1,55 +1,111 @@
 /* global chrome */
-const setupView = document.getElementById("setupView");
-const activeView = document.getElementById("activeView");
-const sessionForm = document.getElementById("sessionForm");
-const statusChip = document.getElementById("statusChip");
-const feedback = document.getElementById("feedback");
+const byId = (id) => document.getElementById(id);
+const setupView = byId("setupView");
+const activeView = byId("activeView");
+const completeView = byId("completeView");
+const sessionForm = byId("sessionForm");
+const statusChip = byId("statusChip");
 
 async function message(payload) { return chrome.runtime.sendMessage(payload); }
+async function activeTab() { return (await chrome.tabs.query({ active: true, currentWindow: true }))[0]; }
+function clean(value, fallback) { return String(value || "").trim().replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^[-_.]+|[-_.]+$/g, "") || fallback; }
 
-function render(session) {
-  const active = Boolean(session?.active);
-  setupView.hidden = active; activeView.hidden = !active;
-  statusChip.textContent = active ? "Recording" : "Off"; statusChip.classList.toggle("active", active);
-  if (!active) return;
-  document.getElementById("activeCase").textContent = session.caseLabel;
-  document.getElementById("activeMeta").textContent = `${session.jurisdiction} · ${session.licenseType}`;
-  document.getElementById("captureCount").textContent = session.captureCount || 0;
-  const events = session.events || session.captures || [];
-  document.getElementById("sequence").replaceChildren(...events.slice(-30).map((capture) => {
-    const dot = document.createElement("span"); dot.className = `page-dot ${capture.status || "saved"}`;
-    dot.textContent = capture.number ? String(capture.number).padStart(2, "0") : capture.status === "skipped" ? "S" : "!";
-    dot.title = `${capture.pageLabel || "Page"}: ${capture.status || "saved"}${capture.reason ? ` — ${capture.reason}` : ""}`;
-    return dot;
-  }));
-  document.getElementById("emptyState").hidden = events.length > 0;
+function setFeedback(view, text, tone = "") {
+  const target = byId(view === "active" ? "activeFeedback" : view === "complete" ? "completeFeedback" : "feedback");
+  target.textContent = text; target.className = `feedback ${tone}`.trim();
 }
 
-function setFeedback(text, tone = "") { feedback.textContent = text; feedback.className = `feedback ${tone}`.trim(); }
-async function activeTab() { return (await chrome.tabs.query({ active: true, currentWindow: true }))[0]; }
+function eventItem(event) {
+  const item = document.createElement("li");
+  const status = event.status || "saved";
+  item.className = `activity-item ${status}${event.preview ? " has-preview" : ""}`;
+  if (event.preview) { const image = document.createElement("img"); image.src = event.preview; image.alt = ""; item.append(image); }
+  const marker = document.createElement("span"); marker.className = "activity-marker"; marker.textContent = status === "saved" ? "✓" : status === "skipped" ? "–" : "!";
+  const copy = document.createElement("div");
+  const name = document.createElement("strong"); name.textContent = event.pageLabel || "Application page";
+  const detail = document.createElement("small"); detail.textContent = status === "saved" ? "Saved" : status === "skipped" ? `Skipped · ${event.reason || "sensitive screen"}` : `Needs review · ${event.reason || status}`;
+  copy.append(name, detail); item.append(marker, copy); return item;
+}
+
+function render(session) {
+  const active = Boolean(session?.active); const complete = Boolean(session && !active && session.startedAt);
+  setupView.hidden = active || complete; activeView.hidden = !active; completeView.hidden = !complete;
+  statusChip.textContent = active ? "Capturing" : complete ? "Complete" : "Ready";
+  statusChip.className = `status-chip ${active ? "active" : complete ? "complete" : ""}`;
+  if (!session) { updateFolderPreview(); return; }
+  const events = session.events || session.captures || [];
+  if (active) {
+    byId("activeCase").textContent = session.caseLabel;
+    byId("activeMeta").textContent = [session.jurisdiction, session.licenseType].filter(Boolean).join(" · ") || "Application details not provided";
+    byId("captureCount").textContent = session.captureCount || 0;
+    const list = byId("activityList"); list.replaceChildren(...events.slice(-5).reverse().map(eventItem));
+    byId("emptyState").hidden = events.length > 0;
+  } else {
+    byId("completeCase").textContent = session.caseLabel;
+    byId("savedTotal").textContent = events.filter((event) => event.status === "saved").length;
+    byId("skippedTotal").textContent = events.filter((event) => event.status === "skipped").length;
+    byId("failedTotal").textContent = events.filter((event) => ["failed", "blocked"].includes(event.status)).length;
+    byId("reviewList").replaceChildren(...events.slice().reverse().map(eventItem));
+  }
+}
+
+function updateFolderPreview() {
+  const test = clean(byId("caseLabel").value, "Your-test");
+  const state = clean(byId("jurisdiction").value, "General");
+  const license = clean(byId("licenseType").value, "Application");
+  byId("folderPreview").textContent = `Downloads/License Page Captures/${test}/${state}_${license}/new-session/`;
+}
+
+async function loadPortalPreset(tab) {
+  if (!tab?.url?.startsWith("http")) return;
+  const { portalPresets = {} } = await chrome.storage.local.get("portalPresets");
+  const preset = portalPresets[new URL(tab.url).origin];
+  if (preset?.customLabels) byId("customLabels").value = preset.customLabels;
+}
+async function savePortalPreset(origin) {
+  const { portalPresets = {} } = await chrome.storage.local.get("portalPresets");
+  portalPresets[origin] = { customLabels: byId("customLabels").value.trim(), updatedAt: new Date().toISOString() };
+  await chrome.storage.local.set({ portalPresets });
+}
 
 sessionForm.addEventListener("submit", async (event) => {
   event.preventDefault(); const tab = await activeTab();
-  if (!tab?.id || !tab.url?.startsWith("http")) { setFeedback("Open an application webpage first.", "error"); return; }
+  if (!tab?.id || !tab.url?.startsWith("http")) { setFeedback("setup", "Open an application webpage first.", "error"); return; }
   const response = await message({ type: "START_SESSION", payload: {
-    caseLabel: document.getElementById("caseLabel").value, jurisdiction: document.getElementById("jurisdiction").value,
-    licenseType: document.getElementById("licenseType").value, skipSensitive: document.getElementById("skipSensitive").checked,
-    safeMode: document.getElementById("safeMode").checked, customLabels: document.getElementById("customLabels").value,
+    caseLabel: byId("caseLabel").value, jurisdiction: byId("jurisdiction").value || "General",
+    licenseType: byId("licenseType").value || "Application", skipSensitive: byId("skipSensitive").checked,
+    safeMode: byId("safeMode").checked, fullPage: byId("fullPage").checked, customLabels: byId("customLabels").value,
     tabId: tab.id, allowedOrigin: new URL(tab.url).origin
   }});
-  if (response?.ok) render(response.session); else setFeedback(response?.reason || "Session could not start.", "error");
+  if (response?.ok) { await savePortalPreset(new URL(tab.url).origin); render(response.session); }
+  else setFeedback("setup", response?.reason || "The test could not start.", "error");
 });
 
-document.getElementById("stopSession").addEventListener("click", async () => { const tab = await activeTab(); const response = await message({ type: "STOP_SESSION", tabId: tab?.id }); render(response?.session); });
-document.getElementById("exportLedger").addEventListener("click", async () => { const tab = await activeTab(); const response = await message({ type: "EXPORT_LEDGER", tabId: tab?.id }); setFeedback(response?.ok ? "Capture ledger exported." : response?.reason || "Ledger export failed.", response?.ok ? "" : "error"); });
-document.getElementById("captureNow").addEventListener("click", async () => {
-  setFeedback("Saving this page…"); const tab = await activeTab();
-  if (!tab?.id) { setFeedback("The active page is unavailable.", "error"); return; }
-  try { const response = await chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_CURRENT", force: false });
-    if (response?.ok) { render(response.session); setFeedback(`Page ${response.record.number} saved.`); }
-    else if (response?.skipped) { render(response.session); setFeedback(`Paused: ${response.reason}.`, "warning"); }
-    else { if (response?.session) render(response.session); setFeedback(response?.reason || "This page could not be saved.", "error"); }
-  } catch { setFeedback("Reload this page, then try again.", "error"); }
+byId("captureNow").addEventListener("click", async () => {
+  setFeedback("active", "Saving the current page…"); const tab = await activeTab();
+  try {
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_CURRENT", force: false });
+    if (response?.ok) { render(response.session); setFeedback("active", response.duplicate ? "This page was already saved." : `${response.record.pageLabel} saved.`); }
+    else if (response?.skipped) { render(response.session); setFeedback("active", `Skipped: ${response.reason}`, "warning"); }
+    else { if (response?.session) render(response.session); setFeedback("active", response?.reason || "The page could not be saved.", "error"); }
+  } catch { setFeedback("active", "Reload the application page, then try again.", "error"); }
 });
 
-activeTab().then((tab) => message({ type: "GET_SESSION", tabId: tab?.id })).then((response) => render(response?.session));
+byId("stopSession").addEventListener("click", async () => {
+  const tab = await activeTab(); const response = await message({ type: "STOP_SESSION", tabId: tab?.id }); render(response?.session);
+});
+
+async function runSessionAction(type, view, success) {
+  const tab = await activeTab(); const response = await message({ type, tabId: tab?.id });
+  setFeedback(view, response?.ok ? success : response?.reason || "That action could not be completed.", response?.ok ? "" : "error");
+}
+byId("openFolder").addEventListener("click", () => runSessionAction("OPEN_SESSION_FOLDER", "complete", "Opening screenshots."));
+byId("openFolderActive").addEventListener("click", () => runSessionAction("OPEN_SESSION_FOLDER", "active", "Opening screenshots."));
+byId("exportSummary").addEventListener("click", () => runSessionAction("EXPORT_SUMMARY", "complete", "Session summary created."));
+byId("exportSummaryActive").addEventListener("click", () => runSessionAction("EXPORT_SUMMARY", "active", "Session summary created."));
+byId("exportLedger").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "complete", "Technical log downloaded."));
+byId("exportLedgerActive").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "active", "Technical log downloaded."));
+byId("newSession").addEventListener("click", async () => { const tab = await activeTab(); await message({ type: "RESET_SESSION", tabId: tab?.id }); sessionForm.reset(); byId("skipSensitive").checked = true; byId("safeMode").checked = true; render(null); });
+["caseLabel", "jurisdiction", "licenseType"].forEach((id) => byId(id).addEventListener("input", updateFolderPreview));
+
+activeTab().then(async (tab) => { await loadPortalPreset(tab); return message({ type: "GET_SESSION", tabId: tab?.id }); }).then((response) => render(response?.session));

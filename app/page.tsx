@@ -36,7 +36,7 @@ const faq = [
   {
     question: "Does it capture the whole scrolling page?",
     answer:
-      "The current version captures the visible browser area—the same view you would save with an ordinary screenshot. Full-page stitching is planned after the first portal pilots.",
+      "Visible-area capture is the fast default. Optional entire-page mode scrolls and stitches long pages without requesting Chrome debugger access.",
   },
   {
     question: "Where do screenshots go?",
@@ -82,7 +82,7 @@ export default function Home() {
           <a href="#privacy">Privacy</a>
           <a href="#install">Install</a>
           <a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report an issue</a>
-          <a className="nav-cta" href="/license-page-capture-v0.2.0.zip" download>Download v0.2</a>
+          <a className="nav-cta" href="/license-page-capture-v0.4.0.zip" download>Download v0.4</a>
         </div>
       </nav>
 
@@ -94,7 +94,7 @@ export default function Home() {
             Page Capture saves a screenshot just before you advance through a licensing application—so your audit trail builds itself while you work.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="/license-page-capture-v0.2.0.zip" download>Download v0.2 <span>↓</span></a>
+            <a className="button primary" href="/license-page-capture-v0.4.0.zip" download>Download v0.4 <span>↓</span></a>
             <a className="button text-button" href="#install">See installation <span>↘</span></a>
           </div>
           <p className="compatibility">Chrome and Microsoft Edge · Updated August 13, 2026</p>
@@ -147,7 +147,7 @@ export default function Home() {
         <div className="ledger-copy">
           <p className="overline">The capture ledger</p>
           <h2>Know what was saved before you leave the page.</h2>
-          <p>Each successful capture appears in sequence. Hover over a page number to see its label, or use Capture this page when a portal uses an unfamiliar control.</p>
+          <p>Each successful capture appears in sequence. Duplicate clicks are ignored, portal controls are remembered, and a readable session summary is created beside the screenshots.</p>
         </div>
         <CaptureStrip />
       </section>
@@ -178,7 +178,7 @@ export default function Home() {
           <li><span>3</span><div><strong>Load the folder</strong><p>Choose Load unpacked and select the extracted extension folder.</p></div></li>
           <li><span>4</span><div><strong>Start a pilot</strong><p>Reload the licensing portal, open Page Capture, create a case, and work normally.</p></div></li>
         </ol>
-        <a className="button primary download-wide" href="/license-page-capture-v0.2.0.zip" download>Download Page Capture v0.2 <span>↓</span></a>
+        <a className="button primary download-wide" href="/license-page-capture-v0.4.0.zip" download>Download Page Capture v0.4 <span>↓</span></a>
       </section>
 
       <section className="section faq" id="faq">
@@ -191,11 +191,11 @@ export default function Home() {
       <section className="closing">
         <p className="overline light">A cleaner application record</p>
         <h2>Stop stopping<br />to take screenshots.</h2>
-        <a className="button inverse" href="/license-page-capture-v0.2.0.zip" download>Start with v0.2 <span>→</span></a>
+        <a className="button inverse" href="/license-page-capture-v0.4.0.zip" download>Start with v0.4 <span>→</span></a>
       </section>
 
       <footer className="site-footer">
-        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview · v0.2.0</small></span></div>
+        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview · v0.4.0</small></span></div>
         <p>Local-first tooling for licensing operations.</p>
         <div><a href="/privacy">Privacy</a><a href="/security">Security</a><a href="/changelog">Changelog</a><a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report issue</a><a href="https://github.com/draphael123/license-page-capture">Source</a></div>
       </footer>

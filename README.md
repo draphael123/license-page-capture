@@ -18,6 +18,8 @@ It is designed for licensing teams that currently stop and manually capture ever
 - Locks each session to its starting portal domain.
 - Accepts portal-specific navigation labels.
 - Exports a JSON capture ledger.
+- Creates a readable HTML session summary and opens the saved screenshot location on request.
+- Prevents rapid duplicate captures and remembers portal-specific button labels.
 
 ## What it does not do
 
@@ -53,8 +55,12 @@ Downloads/
   License Page Captures/
     <case>/
       <state>_<license>/
-        001_Page-Name_<timestamp>.png
+        <session-start>_session/
+          001_Page-Name_<timestamp>.png
+          capture-ledger-<timestamp>.json
 ```
+
+Every time **Start capturing** is selected, a new session folder is used—even when the case, state, and license labels are unchanged.
 
 ## Privacy and security
 
@@ -89,7 +95,7 @@ npm test
 
 ## Current limitations
 
-- Screenshot capture covers the visible viewport only.
+- Screenshot capture covers the visible viewport by default; optional entire-page mode scrolls and stitches long pages.
 - Navigation detection uses visible text and accessibility labels; unusual portals may need a custom label or adapter.
 - Some portals use custom event handling that may require a site-specific adapter.
 - Browser-internal pages and extension-store pages cannot be captured.

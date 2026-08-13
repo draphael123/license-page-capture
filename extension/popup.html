@@ -10,68 +10,82 @@
     <main class="shell">
       <header class="masthead">
         <div class="mark" aria-hidden="true"><span></span></div>
-        <div>
-          <p class="eyebrow">Application record</p>
-          <h1>Page Capture</h1>
-        </div>
-        <div id="statusChip" class="status-chip">Off</div>
+        <div><p class="eyebrow">Application record</p><h1>Page Capture</h1></div>
+        <div id="statusChip" class="status-chip">Ready</div>
       </header>
 
       <section id="setupView" class="panel">
-        <p class="intro">Save each page automatically before you continue.</p>
+        <p class="stage-label">Set up test</p>
+        <h2>What should this test be called?</h2>
+        <p class="intro">A new folder will be created when the test starts.</p>
         <form id="sessionForm">
-          <label>
-            Case label
-            <input id="caseLabel" name="caseLabel" maxlength="70" placeholder="Example: UT-RN-001" required>
+          <label>Test name
+            <input id="caseLabel" name="caseLabel" maxlength="70" placeholder="Example: Utah RN test" required>
           </label>
-          <div class="field-row">
-            <label>
-              State
-              <input id="jurisdiction" name="jurisdiction" maxlength="40" placeholder="Utah" required>
-            </label>
-            <label>
-              License
-              <input id="licenseType" name="licenseType" maxlength="40" placeholder="RN" required>
-            </label>
-          </div>
-          <label class="check-row">
-            <input id="skipSensitive" name="skipSensitive" type="checkbox" checked>
-            <span><strong>Pause on sensitive screens</strong><small>Skips passwords, SSNs, payment, and verification codes.</small></span>
-          </label>
-          <label class="check-row">
-            <input id="safeMode" name="safeMode" type="checkbox" checked>
-            <span><strong>Stop if capture fails</strong><small>Prevents the application from advancing without a screenshot.</small></span>
-          </label>
+          <details class="advanced details-card">
+            <summary>Application details <span>Optional</span></summary>
+            <div class="field-row">
+              <label>State<input id="jurisdiction" name="jurisdiction" maxlength="40" placeholder="Utah"></label>
+              <label>License<input id="licenseType" name="licenseType" maxlength="40" placeholder="RN"></label>
+            </div>
+          </details>
+          <p class="folder-preview"><span>Save to</span><code id="folderPreview">Downloads/License Page Captures/</code></p>
           <details class="advanced">
-            <summary>Portal-specific button labels</summary>
-            <label>Additional labels, separated by commas
+            <summary>Capture safeguards</summary>
+            <label class="check-row"><input id="skipSensitive" name="skipSensitive" type="checkbox" checked><span><strong>Skip sensitive screens</strong><small>Passwords, SSNs, payment, and verification codes.</small></span></label>
+            <label class="check-row"><input id="safeMode" name="safeMode" type="checkbox" checked><span><strong>Stop if saving fails</strong><small>Do not advance without a screenshot.</small></span></label>
+            <label class="check-row"><input id="fullPage" name="fullPage" type="checkbox"><span><strong>Capture the entire page</strong><small>Scrolls and stitches long pages before continuing. This can take a few seconds.</small></span></label>
+          </details>
+          <details class="advanced">
+            <summary>Portal-specific controls</summary>
+            <label>Additional Next-button labels
               <input id="customLabels" name="customLabels" placeholder="Continue application, Go forward">
             </label>
           </details>
-          <button class="primary" type="submit">Start capturing</button>
+          <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+          <button class="primary" type="submit">Start test</button>
         </form>
       </section>
 
       <section id="activeView" class="panel" hidden>
-        <div class="case-summary">
-          <p id="activeCase" class="case-name"></p>
-          <p id="activeMeta" class="case-meta"></p>
-        </div>
-        <div class="count-block">
-          <strong id="captureCount">0</strong>
-          <span>pages saved</span>
-        </div>
-        <div id="sequence" class="sequence" aria-label="Captured page sequence"></div>
-        <p id="emptyState" class="empty-state">Your page sequence will appear here.</p>
-        <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
-        <div class="actions">
-          <button id="captureNow" class="secondary" type="button">Capture this page</button>
-          <button id="stopSession" class="quiet" type="button">Finish session</button>
-        </div>
-        <button id="exportLedger" class="ledger-button" type="button">Export capture ledger</button>
+        <div class="recording-banner"><span class="recording-dot"></span><div><strong>Capturing</strong><small id="activeCase"></small></div><b id="captureCount">0</b></div>
+        <p id="activeMeta" class="case-meta"></p>
+        <div class="section-rule"><span>Recent activity</span></div>
+        <ol id="activityList" class="activity-list"></ol>
+        <p id="emptyState" class="empty-state">Continue through the application. Saved pages will appear here.</p>
+        <p id="activeFeedback" class="feedback" role="status" aria-live="polite"></p>
+        <button id="captureNow" class="secondary" type="button">Capture current page</button>
+        <button id="stopSession" class="primary finish" type="button">Finish test</button>
+        <details class="advanced session-tools">
+          <summary>Session tools</summary>
+          <button id="openFolderActive" class="tool-button" type="button">Open screenshots</button>
+          <button id="exportSummaryActive" class="tool-button" type="button">Create summary</button>
+          <button id="exportLedgerActive" class="tool-button" type="button">Download technical log</button>
+        </details>
       </section>
 
-      <footer>Saved locally to your Downloads folder</footer>
+      <section id="completeView" class="panel completion" hidden>
+        <div class="complete-mark" aria-hidden="true">✓</div>
+        <p class="stage-label">Test complete</p>
+        <h2 id="completeCase"></h2>
+        <div class="result-grid">
+          <div><strong id="savedTotal">0</strong><span>Saved</span></div>
+          <div><strong id="skippedTotal">0</strong><span>Skipped</span></div>
+          <div><strong id="failedTotal">0</strong><span>Needs review</span></div>
+        </div>
+        <div class="section-rule"><span>Review this record</span></div>
+        <ol id="reviewList" class="activity-list review-list"></ol>
+        <p id="completeFeedback" class="feedback" role="status" aria-live="polite"></p>
+        <button id="openFolder" class="primary" type="button">Open screenshots</button>
+        <button id="exportSummary" class="secondary" type="button">Create session summary</button>
+        <details class="advanced session-tools">
+          <summary>More options</summary>
+          <button id="exportLedger" class="tool-button" type="button">Download technical log</button>
+        </details>
+        <button id="newSession" class="text-button" type="button">Start another test</button>
+      </section>
+
+      <footer>Saved locally in your Downloads folder</footer>
     </main>
     <script src="popup.js"></script>
   </body>
