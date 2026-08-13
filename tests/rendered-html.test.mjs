@@ -120,4 +120,7 @@ test("server-renders the searchable tutorial center", async () => {
   assert.match(html, /Install in Chrome or Edge/);
   assert.match(html, /Choose a sensitive-page mode/);
   assert.match(html, /Recover an interrupted session/);
+  assert.match(html, /Actual extension interface/);
+  assert.match(html, /extension-setup\.png/);
+  await Promise.all(["extension-setup.png","extension-capturing.png","extension-review.png"].map((name) => access(new URL(`../public/screenshots/${name}`, import.meta.url))));
 });
