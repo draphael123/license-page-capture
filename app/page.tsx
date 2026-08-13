@@ -119,6 +119,11 @@ export default function Home() {
         <div><p>Open a dedicated workspace with licensing, credentialing, and insurance template forms. No login, submissions, or real personal information.</p><a className="button primary" href="/test-lab">Open the test lab <span>→</span></a></div>
       </section>
 
+      <section className="home-film" aria-labelledby="home-film-title">
+        <div><p className="overline light">Guided product film</p><h2 id="home-film-title">Watch a page become a record.</h2><p>An 11-second AI-produced interface demo shows the real capture sequence with fictional data.</p><a className="button inverse" href="/product">Watch all demos <span>→</span></a></div>
+        <video controls preload="metadata" poster="/demos/overview-poster.png"><source src="/demos/overview.webm" type="video/webm"/><track default kind="captions" src="/demos/overview.vtt" srcLang="en" label="English"/>Your browser does not support embedded video.</video>
+      </section>
+
       <section className="proof-band" aria-label="Product highlights">
         <div><strong>01</strong><span>Works while<br />you work</span></div>
         <div><strong>02</strong><span>Numbered<br />automatically</span></div>

@@ -23,6 +23,8 @@ test("server-renders the Page Capture landing page", async () => {
   assert.match(html, /Already captured/);
   assert.match(html, /Privacy by default/);
   assert.match(html, /Test Lab/);
+  assert.match(html, /Watch a page become a record/);
+  assert.match(html, /overview\.webm/);
   assert.match(html, /Download v0\.9/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
@@ -60,6 +62,14 @@ test("ships the extension package and social preview", async () => {
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "License Page Capture");
   assert.equal(manifest.version, "0.9.0");
+});
+
+test("ships accessible guided product videos", async () => {
+  const product = await render("/product").then((response) => response.text());
+  assert.match(product, /See the record build itself/);
+  assert.match(product, /Simulated product demo/);
+  assert.match(product, /kind="captions"/);
+  await Promise.all(["overview.webm","capture.webm","sensitive.webm","record.webm","overview-poster.png","overview.vtt"].map((name) => access(new URL(`../public/demos/${name}`, import.meta.url))));
 });
 
 test("includes a Vercel server entry for application routes", async () => {
