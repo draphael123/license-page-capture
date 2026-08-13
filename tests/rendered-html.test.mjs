@@ -61,3 +61,11 @@ test("ships the extension package and social preview", async () => {
   assert.equal(manifest.name, "License Page Capture");
   assert.equal(manifest.version, "0.5.0");
 });
+
+test("includes a Vercel server entry for application routes", async () => {
+  const config = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+  const entry = await readFile(new URL("../api/site.mjs", import.meta.url), "utf8");
+  assert.equal(config.outputDirectory, "dist/client");
+  assert.match(config.rewrites[0].destination, /api\/site/);
+  assert.match(entry, /worker\.fetch/);
+});
