@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "License Page Capture",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Captures each licensing application page before you continue.",
   "permissions": ["activeTab", "downloads", "storage", "tabs"],
   "host_permissions": ["<all_urls>"],
@@ -15,7 +15,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["core.js", "content.js"],
       "css": ["capture-indicator.css"],
       "run_at": "document_start"
     }

@@ -38,6 +38,16 @@
             <input id="skipSensitive" name="skipSensitive" type="checkbox" checked>
             <span><strong>Pause on sensitive screens</strong><small>Skips passwords, SSNs, payment, and verification codes.</small></span>
           </label>
+          <label class="check-row">
+            <input id="safeMode" name="safeMode" type="checkbox" checked>
+            <span><strong>Stop if capture fails</strong><small>Prevents the application from advancing without a screenshot.</small></span>
+          </label>
+          <details class="advanced">
+            <summary>Portal-specific button labels</summary>
+            <label>Additional labels, separated by commas
+              <input id="customLabels" name="customLabels" placeholder="Continue application, Go forward">
+            </label>
+          </details>
           <button class="primary" type="submit">Start capturing</button>
         </form>
       </section>
@@ -58,6 +68,7 @@
           <button id="captureNow" class="secondary" type="button">Capture this page</button>
           <button id="stopSession" class="quiet" type="button">Finish session</button>
         </div>
+        <button id="exportLedger" class="ledger-button" type="button">Export capture ledger</button>
       </section>
 
       <footer>Saved locally to your Downloads folder</footer>

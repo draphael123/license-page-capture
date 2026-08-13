@@ -147,6 +147,12 @@ button:focus-visible { outline: 3px solid rgba(23, 104, 229, 0.3); outline-offse
   font: 700 10px/1 "Consolas", monospace;
   box-shadow: inset 0 3px 0 #dceaff;
 }
+.page-dot.skipped { color: var(--amber); box-shadow: inset 0 3px 0 #f5dfb9; }
+.page-dot.failed, .page-dot.blocked { color: #a02835; box-shadow: inset 0 3px 0 #f2c7cc; }
+.advanced { margin: -3px 0 17px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.72); }
+.advanced summary { padding: 11px; cursor: pointer; color: var(--muted); font-size: 11px; font-weight: 700; }
+.advanced label { padding: 0 11px 11px; margin: 0; font-size: 10px; }
+.ledger-button { width: 100%; min-height: 34px; margin-top: 9px; border: 0; background: transparent; color: var(--blue); font-size: 11px; }
 
 .empty-state { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
 .feedback { min-height: 18px; margin: 13px 0 0; color: var(--muted); font-size: 12px; }
