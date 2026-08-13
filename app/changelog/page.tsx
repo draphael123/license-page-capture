@@ -4,6 +4,8 @@ export default function Changelog() {
   return <main className="doc-page">
     <Link className="brand" href="/"><span className="brand-mark"><i /></span><span><strong>Page Capture</strong><small>Return home</small></span></Link>
     <p className="updated">Release history</p><h1>Changelog</h1>
+    <h2>v0.9.0 — August 13, 2026</h2>
+    <ul><li>Simplified extension setup with one Advanced settings panel.</li><li>Structured readiness checklist and clearer confidence language.</li><li>Dedicated Product, Compatibility, and symptom-based Help pages.</li><li>Task-focused navigation and clearer separation between marketing, testing, and support.</li></ul>
     <h2>v0.8.0 — August 13, 2026</h2>
     <ul><li>Verified screenshot downloads before navigation is released.</li><li>Transaction IDs, confidence scoring, page fingerprints, and post-navigation confirmation.</li><li>Automatic retry and visible-area fallback when full-page capture fails.</li><li>Shadow DOM controls, programmatic form submissions, recovery reconciliation, and removable portal rules.</li></ul>
     <h2>v0.7.0 — August 13, 2026</h2>

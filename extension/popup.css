@@ -204,3 +204,10 @@ footer button { padding:0; border:0; background:transparent; color:var(--blue); 
 .review-list { text-align:left; }.text-button { margin-top:10px; background:transparent; color:var(--blue); font-size:11px; }
 
 [hidden] { display: none !important; }
+.preflight:has(.preflight-title) { display:block; padding:12px; }
+.preflight-title { display:grid; grid-template-columns:24px 1fr auto; gap:8px; align-items:center; }
+.preflight-title>span { display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:#d3f1eb; color:var(--teal); font-weight:800; }
+.preflight-title strong { font-size:11px; }.preflight-title b { color:var(--teal); font:700 9px "Consolas",monospace; }
+.preflight ul { margin:10px 0 0; padding:8px 0 0; border-top:1px solid rgba(29,103,91,.16); list-style:none; }
+.preflight li { display:flex; justify-content:space-between; gap:12px; padding:4px 0; color:var(--muted); font-size:9px; }
+.preflight li b { color:var(--ink); font-weight:700; }

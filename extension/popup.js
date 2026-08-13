@@ -117,7 +117,8 @@ async function runPreflight(tab) {
     const result = await chrome.tabs.sendMessage(tab.id, { type: "PREFLIGHT", customLabels: byId("customLabels").value.split(",").map((item) => item.trim()).filter(Boolean) });
     const found = result.navigationControls?.length || 0;
     box.className = `preflight ${found ? "passed" : "warning"}`;
-    box.innerHTML = `<span>${found ? "✓" : "!"}</span><div><strong>${found ? `Ready to test · ${result.confidence}% confidence` : "No Next control detected yet"}</strong><small>${result.inaccessibleFrames ? `${result.inaccessibleFrames} cross-origin frame${result.inaccessibleFrames === 1 ? "" : "s"} cannot be inspected.` : result.sensitive ? "Sensitive fields are present and will be skipped." : found ? `${found} navigation control${found === 1 ? "" : "s"} detected.` : "You can add the button label below or start on the first form page."}</small></div>`;
+    const level = result.confidence >= 75 ? "High" : result.confidence >= 45 ? "Medium" : "Low";
+    box.innerHTML = `<div class="preflight-title"><span>${found ? "✓" : "!"}</span><strong>${found ? "Ready to test" : "Review before starting"}</strong><b>${level} · ${result.confidence}%</b></div><ul><li><span>Page access</span><b>Ready</b></li><li><span>Forward control</span><b>${found ? "Found" : "Not found"}</b></li><li><span>Sensitive fields</span><b>${result.sensitive ? "Will skip" : "None found"}</b></li><li><span>Embedded frames</span><b>${result.inaccessibleFrames ? `${result.inaccessibleFrames} inaccessible` : "Clear"}</b></li></ul>`;
   } catch { box.className = "preflight failed"; box.innerHTML = "<span>!</span><div><strong>Reload this webpage</strong><small>The extension needs to reconnect before the test starts.</small></div>"; }
 }
 

@@ -27,26 +27,20 @@
           <label>Test name
             <input id="caseLabel" name="caseLabel" maxlength="70" placeholder="Example: Utah RN test" required>
           </label>
-          <details class="advanced details-card">
-            <summary>Application details <span>Optional</span></summary>
+          <p class="folder-preview"><span>Save to</span><code id="folderPreview">Downloads/License Page Captures/</code></p>
+          <div id="preflight" class="preflight"><span>○</span><div><strong>Checking this page</strong><small>Capture access and navigation controls</small></div></div>
+          <details class="advanced">
+            <summary>Advanced settings <span>Optional</span></summary>
             <div class="field-row">
               <label>State<input id="jurisdiction" name="jurisdiction" maxlength="40" placeholder="Utah"></label>
               <label>License<input id="licenseType" name="licenseType" maxlength="40" placeholder="RN"></label>
             </div>
-          </details>
-          <p class="folder-preview"><span>Save to</span><code id="folderPreview">Downloads/License Page Captures/</code></p>
-          <div id="preflight" class="preflight"><span>○</span><div><strong>Checking this page</strong><small>Capture access and navigation controls</small></div></div>
-          <details class="advanced">
-            <summary>Capture safeguards</summary>
             <label class="check-row"><input id="skipSensitive" name="skipSensitive" type="checkbox" checked><span><strong>Skip sensitive screens</strong><small>Passwords, SSNs, payment, and verification codes.</small></span></label>
             <label class="check-row"><input id="safeMode" name="safeMode" type="checkbox" checked><span><strong>Stop if saving fails</strong><small>Do not advance without a screenshot.</small></span></label>
             <label class="check-row"><input id="fullPage" name="fullPage" type="checkbox"><span><strong>Capture the entire page</strong><small>Scrolls and stitches long pages before continuing. This can take a few seconds.</small></span></label>
-          </details>
-          <label class="retention-row">Review reminder
-            <select id="retentionDays"><option value="0">No reminder</option><option value="7">After 7 days</option><option value="30" selected>After 30 days</option><option value="90">After 90 days</option></select>
-          </label>
-          <details class="advanced">
-            <summary>Portal-specific controls</summary>
+            <label class="retention-row">Review reminder
+              <select id="retentionDays"><option value="0">No reminder</option><option value="7">After 7 days</option><option value="30" selected>After 30 days</option><option value="90">After 90 days</option></select>
+            </label>
             <label>Additional Next-button labels
               <input id="customLabels" name="customLabels" placeholder="Continue application, Go forward">
             </label>
