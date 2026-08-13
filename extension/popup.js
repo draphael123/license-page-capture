@@ -3,10 +3,13 @@ const byId = (id) => document.getElementById(id);
 const setupView = byId("setupView");
 const activeView = byId("activeView");
 const completeView = byId("completeView");
+const onboardingView = byId("onboardingView");
 const sessionForm = byId("sessionForm");
 const statusChip = byId("statusChip");
 const RELEASE_URL = "https://license-page-capture-repo.vercel.app/latest.json";
 let availableRelease = null;
+let onboardingRequired = false;
+let renderedSession = null;
 
 async function message(payload) { return chrome.runtime.sendMessage(payload); }
 async function activeTab() { return (await chrome.tabs.query({ active: true, currentWindow: true }))[0]; }
@@ -22,16 +25,19 @@ function eventItem(event, review = false) {
   const status = event.status || "saved";
   item.className = `activity-item ${status}${event.preview ? " has-preview" : ""}`;
   if (event.preview) { const image = document.createElement("img"); image.src = event.preview; image.alt = ""; item.append(image); }
-  const marker = document.createElement("span"); marker.className = "activity-marker"; marker.textContent = status === "saved" ? "✓" : status === "skipped" || status === "removed" ? "–" : "!";
+  const marker = document.createElement("span"); marker.className = "activity-marker"; marker.textContent = status === "saved" ? "✓" : status === "note" ? "N" : status === "skipped" || status === "removed" ? "–" : "!";
   const copy = document.createElement("div");
   const name = document.createElement("strong"); name.textContent = event.pageLabel || "Application page";
-  const detail = document.createElement("small"); detail.textContent = status === "saved" ? "Saved" : status === "removed" ? "Screenshot removed" : status === "skipped" ? `Skipped · ${event.reason || "sensitive screen"}` : `Needs review · ${event.reason || status}`;
+  const detail = document.createElement("small"); detail.textContent = status === "saved" ? `${event.redacted ? "Saved · detected fields blurred" : "Saved"}${event.note ? ` · ${event.note}` : ""}` : status === "note" ? event.note : status === "removed" ? "Screenshot removed" : status === "skipped" ? `Skipped · ${event.reason || "sensitive screen"}` : `Needs review · ${event.reason || status}`;
   copy.append(name, detail); item.append(marker, copy);
   if (review && status === "saved") { const remove = document.createElement("button"); remove.type = "button"; remove.className = "remove-capture"; remove.textContent = "Remove"; remove.dataset.eventId = event.id; remove.setAttribute("aria-label", `Remove ${event.pageLabel || "application page"} screenshot`); item.append(remove); }
   return item;
 }
 
 function render(session) {
+  renderedSession = session || null;
+  if (onboardingRequired && !session) { onboardingView.hidden = false; setupView.hidden = true; activeView.hidden = true; completeView.hidden = true; return; }
+  onboardingView.hidden = true;
   const active = Boolean(session?.active); const complete = Boolean(session && !active && session.startedAt);
   setupView.hidden = active || complete; activeView.hidden = !active; completeView.hidden = !complete;
   statusChip.textContent = active ? "Capturing" : complete ? "Complete" : "Ready";
@@ -49,6 +55,7 @@ function render(session) {
     byId("savedTotal").textContent = events.filter((event) => event.status === "saved").length;
     byId("skippedTotal").textContent = events.filter((event) => event.status === "skipped").length;
     byId("failedTotal").textContent = events.filter((event) => ["failed", "blocked"].includes(event.status)).length;
+    const saved = events.filter((event) => event.status === "saved"); const issues = events.filter((event) => ["failed", "blocked"].includes(event.status)); const confirmed = saved.filter((event) => event.transition === "confirmed"); const score = Math.max(0, Math.min(100, Math.round((saved.length ? confirmed.length / saved.length : 0) * 65 + (issues.length ? 0 : 25) + (saved.length ? 10 : 0)))); byId("readinessScore").textContent = `${score}%`;
     byId("reviewList").replaceChildren(...events.slice().reverse().map((event) => eventItem(event, true)));
     if (session.reviewAfter) setFeedback("complete", `Review these local files by ${new Date(session.reviewAfter).toLocaleDateString()}.`, "warning");
   }
@@ -127,7 +134,7 @@ sessionForm.addEventListener("submit", async (event) => {
   if (!tab?.id || !tab.url?.startsWith("http")) { setFeedback("setup", "Open an application webpage first.", "error"); return; }
   const response = await message({ type: "START_SESSION", payload: {
     caseLabel: byId("caseLabel").value, jurisdiction: byId("jurisdiction").value || "General",
-    licenseType: byId("licenseType").value || "Application", skipSensitive: byId("skipSensitive").checked,
+    licenseType: byId("licenseType").value || "Application", skipSensitive: byId("sensitiveMode").value === "skip", redactSensitive: byId("sensitiveMode").value === "redact",
     safeMode: byId("safeMode").checked, fullPage: byId("fullPage").checked, customLabels: byId("customLabels").value,
     retentionDays: Number(byId("retentionDays").value),
     tabId: tab.id, allowedOrigin: new URL(tab.url).origin
@@ -162,7 +169,10 @@ byId("exportLedger").addEventListener("click", () => runSessionAction("EXPORT_LE
 byId("exportLedgerActive").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "active", "Technical log downloaded."));
 byId("exportSupport").addEventListener("click", () => runSessionAction("EXPORT_SUPPORT", "complete", "Privacy-safe support report downloaded."));
 byId("exportSupportActive").addEventListener("click", () => runSessionAction("EXPORT_SUPPORT", "active", "Privacy-safe support report downloaded."));
-byId("newSession").addEventListener("click", async () => { const tab = await activeTab(); await message({ type: "RESET_SESSION", tabId: tab?.id }); sessionForm.reset(); byId("skipSensitive").checked = true; byId("safeMode").checked = true; render(null); });
+byId("exportReadiness").addEventListener("click", () => runSessionAction("EXPORT_READINESS", "complete", "Pilot-readiness report created. Open it and choose Print to save a PDF."));
+byId("exportReadinessActive").addEventListener("click", () => runSessionAction("EXPORT_READINESS", "active", "Pilot-readiness report created. Open it and choose Print to save a PDF."));
+byId("addNote").addEventListener("click", async () => { const note = byId("sessionNote").value.trim(); if (!note) return; const tab = await activeTab(); const response = await message({ type: "ADD_NOTE", tabId: tab?.id, note }); if (response?.ok) { byId("sessionNote").value = ""; render(response.session); setFeedback("active", "Note added to this record."); } });
+byId("newSession").addEventListener("click", async () => { const tab = await activeTab(); await message({ type: "RESET_SESSION", tabId: tab?.id }); sessionForm.reset(); byId("sensitiveMode").value = "skip"; byId("safeMode").checked = true; render(null); });
 byId("reviewList").addEventListener("click", async (event) => {
   const button = event.target.closest(".remove-capture"); if (!button) return;
   const item = button.closest(".activity-item"); const name = item?.querySelector("strong")?.textContent || "this screenshot";
@@ -177,3 +187,7 @@ activeTab().then(async (tab) => { await loadPortalPreset(tab); await runPrefligh
 chrome.storage.local.get("lastUpdateCheck").then(({ lastUpdateCheck }) => {
   if (!lastUpdateCheck || Date.now() - new Date(lastUpdateCheck).getTime() > 24 * 60 * 60 * 1000) checkForUpdates(false);
 });
+
+byId("finishOnboarding").addEventListener("click", async () => { await chrome.storage.local.set({ onboardingComplete: true }); onboardingRequired = false; render(renderedSession); byId("caseLabel").focus(); });
+byId("openGuide").addEventListener("click", () => chrome.tabs.create({ url: "https://license-page-capture-repo.vercel.app/onboarding" }));
+chrome.storage.local.get("onboardingComplete").then(({ onboardingComplete }) => { onboardingRequired = !onboardingComplete; render(renderedSession); });

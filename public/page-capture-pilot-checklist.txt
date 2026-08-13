@@ -1,0 +1,16 @@
+PAGE CAPTURE — PORTAL PILOT CHECKLIST
+
+[ ] Install or update the current extension package.
+[ ] Use fictional information only.
+[ ] Open the target portal and run Page Capture preflight.
+[ ] Name the test without provider, patient, or applicant personal information.
+[ ] Keep sensitive screens set to Pause and skip for the first run.
+[ ] Complete every representative application page.
+[ ] Confirm the expected screenshots appear in order.
+[ ] Review skipped, blocked, failed, and duplicate events.
+[ ] Verify sensitive information does not appear in retained files.
+[ ] Add notes for any exceptions or manual steps.
+[ ] Create the pilot-readiness report and save it as PDF.
+[ ] Export a privacy-safe support report for unexplained behavior.
+[ ] Repeat the test after any portal rule or setting changes.
+[ ] Approve real-data use only under your organization’s privacy and retention requirements.

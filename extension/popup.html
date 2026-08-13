@@ -8,6 +8,11 @@
   </head>
   <body>
     <main class="shell">
+      <section id="onboardingView" class="onboarding" hidden aria-labelledby="onboardingTitle">
+        <p class="eyebrow">Welcome to Page Capture</p><h2 id="onboardingTitle">Build a reliable application record in four steps.</h2>
+        <ol class="onboarding-steps"><li><b>1</b><span><strong>Open the application</strong><small>Navigate to the first portal page you want recorded.</small></span></li><li><b>2</b><span><strong>Name the test</strong><small>Use a non-sensitive label; a new local folder is created automatically.</small></span></li><li><b>3</b><span><strong>Work normally</strong><small>Page Capture saves and verifies each page before Next continues.</small></span></li><li><b>4</b><span><strong>Review and export</strong><small>Add notes, inspect skipped pages, and create your evidence report.</small></span></li></ol>
+        <div class="onboarding-actions"><button id="openGuide" class="secondary" type="button">Open full guide</button><button id="finishOnboarding" class="primary" type="button">Set up my first test</button></div>
+      </section>
       <header class="masthead">
         <div class="mark" aria-hidden="true"><span></span></div>
         <div><p class="eyebrow">Application record</p><h1>Page Capture</h1></div>
@@ -35,7 +40,10 @@
               <label>State<input id="jurisdiction" name="jurisdiction" maxlength="40" placeholder="Utah"></label>
               <label>License<input id="licenseType" name="licenseType" maxlength="40" placeholder="RN"></label>
             </div>
-            <label class="check-row"><input id="skipSensitive" name="skipSensitive" type="checkbox" checked><span><strong>Skip sensitive screens</strong><small>Passwords, SSNs, payment, and verification codes.</small></span></label>
+            <label class="retention-row">Sensitive screens
+              <select id="sensitiveMode"><option value="skip" selected>Pause and skip (recommended)</option><option value="redact">Blur detected fields and capture</option><option value="capture">Capture without redaction</option></select>
+              <small>Redaction covers detected fields in the visible browser area. Always review the saved image.</small>
+            </label>
             <label class="check-row"><input id="safeMode" name="safeMode" type="checkbox" checked><span><strong>Stop if saving fails</strong><small>Do not advance without a screenshot.</small></span></label>
             <label class="check-row"><input id="fullPage" name="fullPage" type="checkbox"><span><strong>Capture the entire page</strong><small>Scrolls and stitches long pages before continuing. This can take a few seconds.</small></span></label>
             <label class="retention-row">Review reminder
@@ -58,6 +66,7 @@
         <ol id="activityList" class="activity-list"></ol>
         <p id="emptyState" class="empty-state">Continue through the application. Saved pages will appear here.</p>
         <p id="activeFeedback" class="feedback" role="status" aria-live="polite"></p>
+        <div class="note-row"><input id="sessionNote" maxlength="160" placeholder="Add a note to this record"><button id="addNote" type="button">Add note</button></div>
         <button id="captureNow" class="secondary" type="button">Capture current page</button>
         <button id="stopSession" class="primary finish" type="button">Finish test</button>
         <details class="advanced session-tools">
@@ -66,6 +75,7 @@
           <button id="exportSummaryActive" class="tool-button" type="button">Create summary</button>
           <button id="exportLedgerActive" class="tool-button" type="button">Download technical log</button>
           <button id="exportSupportActive" class="tool-button" type="button">Export privacy-safe support report</button>
+          <button id="exportReadinessActive" class="tool-button" type="button">Create pilot-readiness report</button>
         </details>
       </section>
 
@@ -77,6 +87,7 @@
           <div><strong id="savedTotal">0</strong><span>Saved</span></div>
           <div><strong id="skippedTotal">0</strong><span>Skipped</span></div>
           <div><strong id="failedTotal">0</strong><span>Needs review</span></div>
+          <div><strong id="readinessScore">—</strong><span>Readiness</span></div>
         </div>
         <div class="section-rule"><span>Review this record</span></div>
         <ol id="reviewList" class="activity-list review-list"></ol>
@@ -87,6 +98,7 @@
           <summary>More options</summary>
           <button id="exportLedger" class="tool-button" type="button">Download technical log</button>
           <button id="exportSupport" class="tool-button" type="button">Export privacy-safe support report</button>
+          <button id="exportReadiness" class="tool-button" type="button">Create pilot-readiness report</button>
         </details>
         <button id="newSession" class="text-button" type="button">Start another test</button>
       </section>

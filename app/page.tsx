@@ -1,4 +1,4 @@
-const steps = [
+﻿const steps = [
   {
     number: "01",
     title: "Start a case",
@@ -12,7 +12,7 @@ const steps = [
   {
     number: "03",
     title: "Move forward",
-    text: "Before the portal advances, the visible page is saved, numbered, and placed in the application’s local folder.",
+    text: "Before the portal advances, the visible page is saved, numbered, and placed in the applicationâ€™s local folder.",
   },
   {
     number: "04",
@@ -39,7 +39,7 @@ const faq = [
   {
     question: "Where do screenshots go?",
     answer:
-      "They stay on your computer under Downloads › License Page Captures › case › state and license. The extension does not transmit them anywhere.",
+      "They stay on your computer under Downloads â€º License Page Captures â€º case â€º state and license. The extension does not transmit them anywhere.",
   },
   {
     question: "What happens on a sensitive screen?",
@@ -80,22 +80,22 @@ export default function Home() {
           <a href="/test-lab">Test Lab</a>
           <a href="/compatibility">Compatibility</a>
           <a href="/help">Help</a>
-          <a className="nav-cta" href="/download">Download v0.9</a>
+          <a className="nav-cta" href="/download">Download v1.0</a>
         </div>
       </nav>
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <p className="kicker"><span>●</span> Developer preview · pilot before production use</p>
+          <p className="kicker"><span>â—</span> Developer preview Â· pilot before production use</p>
           <h1>Every page.<br /><em>Already captured.</em></h1>
           <p className="hero-text">
-            Page Capture saves a screenshot just before you advance through a licensing application—so your audit trail builds itself while you work.
+            Page Capture saves a screenshot just before you advance through a licensing applicationâ€”so your audit trail builds itself while you work.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="/download">Download v0.9 <span>↓</span></a>
-            <a className="button text-button" href="#install">See installation <span>↘</span></a>
+            <a className="button primary" href="/download">Download v1.0 <span>â†“</span></a>
+            <a className="button text-button" href="#install">See installation <span>â†˜</span></a>
           </div>
-          <p className="compatibility">Chrome and Microsoft Edge · Updated August 13, 2026</p>
+          <p className="compatibility">Chrome and Microsoft Edge Â· Updated August 13, 2026</p>
         </div>
 
         <div className="hero-demo" aria-label="Illustration of Page Capture in use">
@@ -106,8 +106,8 @@ export default function Home() {
               <h2>Education history</h2>
               <div className="mock-label">Institution</div><div className="mock-field">University of Example</div>
               <div className="mock-row"><div><div className="mock-label">Degree</div><div className="mock-field">Bachelor of Science</div></div><div><div className="mock-label">Graduation year</div><div className="mock-field">2020</div></div></div>
-              <div className="mock-actions"><span>Back</span><strong>Next →</strong></div>
-              <div className="capture-toast"><span>✓</span><div><strong>Page 03 saved</strong><small>Education history</small></div></div>
+              <div className="mock-actions"><span>Back</span><strong>Next â†’</strong></div>
+              <div className="capture-toast"><span>âœ“</span><div><strong>Page 03 saved</strong><small>Education history</small></div></div>
             </div>
           </div>
           <CaptureStrip compact />
@@ -116,11 +116,11 @@ export default function Home() {
 
       <section className="test-lab-teaser">
         <div><p className="overline">Capture test lab</p><h2>Test it before<br />you trust it.</h2></div>
-        <div><p>Open a dedicated workspace with licensing, credentialing, and insurance template forms. No login, submissions, or real personal information.</p><a className="button primary" href="/test-lab">Open the test lab <span>→</span></a></div>
+        <div><p>Open a dedicated workspace with licensing, credentialing, and insurance template forms. No login, submissions, or real personal information.</p><a className="button primary" href="/test-lab">Open the test lab <span>â†’</span></a></div>
       </section>
 
       <section className="home-film" aria-labelledby="home-film-title">
-        <div><p className="overline light">Guided product film</p><h2 id="home-film-title">Watch a page become a record.</h2><p>An 11-second AI-produced interface demo shows the real capture sequence with fictional data.</p><a className="button inverse" href="/product">Watch all demos <span>→</span></a></div>
+        <div><p className="overline light">Guided product film</p><h2 id="home-film-title">Watch a page become a record.</h2><p>An 11-second AI-produced interface demo shows the real capture sequence with fictional data.</p><a className="button inverse" href="/product">Watch all demos <span>â†’</span></a></div>
         <video controls preload="metadata" poster="/demos/overview-poster.png"><source src="/demos/overview.webm" type="video/webm"/><track default kind="captions" src="/demos/overview.vtt" srcLang="en" label="English"/>Your browser does not support embedded video.</video>
       </section>
 
@@ -160,16 +160,17 @@ export default function Home() {
           <div className="privacy-copy">
             <p className="overline light">Privacy by default</p>
             <h2>Screenshots stay<br />on this computer.</h2>
-            <p>Page Capture performs no analytics or remote transmission. Files go to your browser’s Downloads location, which may itself be synchronized by OneDrive or another service.</p>
+            <p>Page Capture performs no analytics or remote transmission. Files go to your browserâ€™s Downloads location, which may itself be synchronized by OneDrive or another service.</p>
           </div>
           <div className="safeguards">
-            {safeguards.map((item) => <div key={item}><span>✓</span>{item}</div>)}
+            {safeguards.map((item) => <div key={item}><span>âœ“</span>{item}</div>)}
           </div>
-          <p className="privacy-note"><strong>Important:</strong> Sensitive-screen detection is a safeguard, not a guarantee. Review each portal’s data-handling requirements before use.</p>
+          <p className="privacy-note"><strong>Important:</strong> Sensitive-screen detection is a safeguard, not a guarantee. Review each portalâ€™s data-handling requirements before use.</p>
         </div>
       </section>
 
       <section className="section install" id="install">
+        <div className="onboarding-callout"><p className="overline">New to Page Capture?</p><h2>Follow the guided pilot.</h2><p>Start with fictional information, learn every extension control, and use a readiness report to decide whether a portal is ready for broader use.</p><a className="button primary" href="/onboarding">Open onboarding <span>â†’</span></a><a href="/resources">View pilot resources</a></div>
         <div className="section-heading">
           <p className="overline">Install the preview</p>
           <h2>Ready in about<br />two minutes.</h2>
@@ -181,7 +182,7 @@ export default function Home() {
           <li><span>3</span><div><strong>Load the folder</strong><p>Choose Load unpacked and select the extracted extension folder.</p></div></li>
           <li><span>4</span><div><strong>Start a pilot</strong><p>Reload the licensing portal, open Page Capture, create a case, and work normally.</p></div></li>
         </ol>
-        <a className="button primary download-wide" href="/download">Download Page Capture v0.9 <span>↓</span></a>
+        <a className="button primary download-wide" href="/download">Download Page Capture v1.0 <span>â†“</span></a>
       </section>
 
       <section className="section faq" id="faq">
@@ -194,11 +195,11 @@ export default function Home() {
       <section className="closing">
         <p className="overline light">A cleaner application record</p>
         <h2>Stop stopping<br />to take screenshots.</h2>
-        <a className="button inverse" href="/download">Start with v0.9 <span>→</span></a>
+        <a className="button inverse" href="/download">Start with v1.0 <span>â†’</span></a>
       </section>
 
       <footer className="site-footer">
-        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview · v0.9.0</small></span></div>
+        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview Â· v1.0.0</small></span></div>
         <p>Local-first tooling for licensing operations.</p>
         <div><a href="/privacy">Privacy</a><a href="/security">Security</a><a href="/changelog">Changelog</a><a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report issue</a><a href="https://github.com/draphael123/license-page-capture">Source</a></div>
       </footer>

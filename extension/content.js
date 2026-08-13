@@ -34,6 +34,14 @@ function pageLabel() {
   return currentStep || heading || document.title || "Application page";
 }
 
+function sensitiveRects() {
+  const fields = [...document.querySelectorAll("input, select, textarea")].filter((input) => {
+    const id = input.id ? CSS.escape(input.id) : ""; const label = id ? document.querySelector(`label[for='${id}']`)?.innerText : "";
+    return input.type === "password" || input.autocomplete?.startsWith("cc-") || input.autocomplete === "one-time-code" || Boolean(containsSensitive([input.name, input.id, input.placeholder, input.getAttribute("aria-label"), label].filter(Boolean).join(" ")));
+  });
+  return fields.map((field) => { const rect = field.getBoundingClientRect(); return { x: Math.max(0, rect.x - 6), y: Math.max(0, rect.y - 6), width: rect.width + 12, height: rect.height + 12 }; }).filter((rect) => rect.width > 12 && rect.height > 12 && rect.y < innerHeight && rect.x < innerWidth);
+}
+
 function fingerprint() {
   return pageFingerprint({ url: location.href, title: document.title, heading: pageLabel(), formCount: document.forms.length, textLength: document.body?.innerText?.length || 0 });
 }
@@ -84,14 +92,14 @@ async function captureFullPage() {
 
 async function requestCapture(force = false, transaction = {}) {
   const reason = sensitiveReason(); let dataUrl = null; let fallback = false;
-  if (session?.fullPage && (!reason || force || !session.skipSensitive)) {
+  if (session?.fullPage && !session.redactSensitive && (!reason || force || !session.skipSensitive)) {
     showIndicator("Capturing the entire page…", "working", true);
     try { dataUrl = await captureFullPage(); } catch { fallback = true; showIndicator("Full page unavailable · using visible area", "warning", true); }
   }
-  let result = await chrome.runtime.sendMessage({ type: "CAPTURE_PAGE", payload: { title: document.title, pageLabel: pageLabel(), url: location.href, origin: location.origin, sensitive: Boolean(reason), sensitiveReason: reason, force, dataUrl, fallback, ...transaction } });
+  let result = await chrome.runtime.sendMessage({ type: "CAPTURE_PAGE", payload: { title: document.title, pageLabel: pageLabel(), url: location.href, origin: location.origin, sensitive: Boolean(reason), sensitiveReason: reason, sensitiveRects: sensitiveRects(), viewport: { width: innerWidth, height: innerHeight }, force, dataUrl, fallback, ...transaction } });
   if (!result?.ok && !result?.skipped && !force) {
     await wait(220);
-    result = await chrome.runtime.sendMessage({ type: "CAPTURE_PAGE", payload: { title: document.title, pageLabel: pageLabel(), url: location.href, origin: location.origin, sensitive: Boolean(reason), sensitiveReason: reason, force, dataUrl: null, fallback: true, ...transaction } });
+    result = await chrome.runtime.sendMessage({ type: "CAPTURE_PAGE", payload: { title: document.title, pageLabel: pageLabel(), url: location.href, origin: location.origin, sensitive: Boolean(reason), sensitiveReason: reason, sensitiveRects: sensitiveRects(), viewport: { width: innerWidth, height: innerHeight }, force, dataUrl: null, fallback: true, ...transaction } });
   }
   return result;
 }

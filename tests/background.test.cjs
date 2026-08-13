@@ -95,3 +95,12 @@ test("creates a new download folder for every session", async () => {
   const secondFolder = h.downloads[1].filename.split("/").slice(0, -1).join("/");
   assert.notEqual(firstFolder, secondFolder);
 });
+
+test("adds notes and creates a pilot readiness report", async () => {
+  const h = createHarness();
+  await h.send({ type: "START_SESSION", payload: { tabId: 12, caseLabel: "TEST-1", jurisdiction: "UT", licenseType: "RN", allowedOrigin: "https://board.test" } });
+  const note = await h.send({ type: "ADD_NOTE", tabId: 12, note: "Manual board verification required" });
+  assert.equal(note.ok, true); assert.equal(note.session.events[0].status, "note");
+  const report = await h.send({ type: "EXPORT_READINESS", tabId: 12 });
+  assert.equal(report.ok, true); assert.match(report.filename, /pilot-readiness-report\.html$/);
+});

@@ -4,6 +4,8 @@ export default function Changelog() {
   return <main className="doc-page">
     <Link className="brand" href="/"><span className="brand-mark"><i /></span><span><strong>Page Capture</strong><small>Return home</small></span></Link>
     <p className="updated">Release history</p><h1>Changelog</h1>
+    <h2>v1.0.0 — Pilot Readiness · August 13, 2026</h2>
+    <ul><li>Four-step extension onboarding and a complete website onboarding path.</li><li>Sensitive-screen modes for pausing, detected-field redaction, or supervised capture.</li><li>Session notes, readiness scoring, and print-to-PDF pilot evidence reports.</li><li>Searchable compatibility patterns, downloadable pilot checklist, workflow comparison, roadmap, and portal requests.</li></ul>
     <h2>v0.9.0 — August 13, 2026</h2>
     <ul><li>Simplified extension setup with one Advanced settings panel.</li><li>Structured readiness checklist and clearer confidence language.</li><li>Dedicated Product, Compatibility, and symptom-based Help pages.</li><li>Task-focused navigation and clearer separation between marketing, testing, and support.</li></ul>
     <h2>v0.8.0 — August 13, 2026</h2>

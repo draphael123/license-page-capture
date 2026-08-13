@@ -25,7 +25,7 @@ test("server-renders the Page Capture landing page", async () => {
   assert.match(html, /Test Lab/);
   assert.match(html, /Watch a page become a record/);
   assert.match(html, /overview\.webm/);
-  assert.match(html, /Download v0\.9/);
+  assert.match(html, /Download v1\.0/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -54,14 +54,14 @@ test("server-renders the dedicated no-login test lab", async () => {
 
 test("ships the extension package and social preview", async () => {
   await Promise.all([
-    access(new URL("../public/license-page-capture-v0.9.0.zip", import.meta.url)),
+    access(new URL("../public/license-page-capture-v1.0.0.zip", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../extension/manifest.json", import.meta.url)),
   ]);
   const manifest = JSON.parse(await readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"));
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "License Page Capture");
-  assert.equal(manifest.version, "0.9.0");
+  assert.equal(manifest.version, "1.0.0");
 });
 
 test("ships accessible guided product videos", async () => {
@@ -103,4 +103,14 @@ test("server-renders the product, compatibility, help, and download pathways", a
   assert.match(pages[1], /Cross-origin iframes/);
   assert.match(pages[2], /Choose the symptom/);
   assert.match(pages[3], /Install or update/);
+});
+
+test("server-renders onboarding and pilot resources", async () => {
+  const [onboarding, resources] = await Promise.all(["/onboarding", "/resources"].map((path) => render(path).then((response) => { assert.equal(response.status, 200); return response.text(); })));
+  assert.match(onboarding, /From download to/);
+  assert.match(onboarding, /Production gate/);
+  assert.match(onboarding, /Where each tool fits/);
+  assert.match(resources, /Manual screenshots versus Page Capture/);
+  assert.match(resources, /Pilot checklist/);
+  await access(new URL("../public/page-capture-pilot-checklist.txt", import.meta.url));
 });

@@ -19,6 +19,17 @@ async function createThumbnail(dataUrl) {
   } catch { return ""; }
 }
 
+async function redactDetectedFields(dataUrl, rects = [], viewport = {}) {
+  if (!rects.length || typeof OffscreenCanvas === "undefined" || typeof createImageBitmap === "undefined") return dataUrl;
+  try {
+    const source = await createImageBitmap(await (await fetch(dataUrl)).blob()); const imageWidth = source.width, imageHeight = source.height; const canvas = new OffscreenCanvas(imageWidth, imageHeight); const context = canvas.getContext("2d"); context.drawImage(source, 0, 0); source.close();
+    const scaleX = imageWidth / Math.max(1, Number(viewport.width || imageWidth)); const scaleY = imageHeight / Math.max(1, Number(viewport.height || imageHeight));
+    context.fillStyle = "#18283d";
+    for (const rect of rects) { const x = Math.floor(rect.x * scaleX), y = Math.floor(rect.y * scaleY), width = Math.ceil(rect.width * scaleX), height = Math.ceil(rect.height * scaleY); context.fillRect(x, y, width, height); context.fillStyle = "#ffffff"; context.font = `${Math.max(12, Math.round(11 * scaleY))}px sans-serif`; context.fillText("REDACTED", x + 8, y + Math.max(16, height / 2 + 4)); context.fillStyle = "#18283d"; }
+    const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: "image/png" })).arrayBuffer()); let binary = ""; for (const byte of bytes) binary += String.fromCharCode(byte); return `data:image/png;base64,${btoa(binary)}`;
+  } catch { return dataUrl; }
+}
+
 function sessionFolder(session) {
   const started = timestamp(new Date(session.startedAt));
   return [
@@ -59,7 +70,7 @@ async function startSession(payload) {
   const session = {
     version: 2, tabId, active: true, caseLabel: payload.caseLabel.trim(),
     jurisdiction: payload.jurisdiction.trim(), licenseType: payload.licenseType.trim(),
-    skipSensitive: payload.skipSensitive !== false, safeMode: payload.safeMode !== false, fullPage: payload.fullPage === true,
+    skipSensitive: payload.skipSensitive !== false, redactSensitive: payload.redactSensitive === true, safeMode: payload.safeMode !== false, fullPage: payload.fullPage === true,
     customLabels: String(payload.customLabels || "").split(",").map((x) => x.trim()).filter(Boolean), retentionDays: Number(payload.retentionDays || 0),
     allowedOrigin: payload.allowedOrigin || "", startedAt: new Date().toISOString(),
     reviewAfter: Number(payload.retentionDays || 0) ? new Date(Date.now() + Number(payload.retentionDays) * 86400000).toISOString() : "",
@@ -101,7 +112,9 @@ async function capturePage(tab, payload) {
   }
 
   try {
-    const dataUrl = payload.dataUrl || await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
+    let dataUrl = payload.dataUrl || await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
+    const redacted = Boolean(payload.sensitive && session.redactSensitive && payload.sensitiveRects?.length);
+    if (redacted) dataUrl = await redactDetectedFields(dataUrl, payload.sensitiveRects, payload.viewport);
     const number = session.captureCount + 1;
     const pageLabel = cleanSegment(payload.pageLabel || payload.title || tab.title, "Page");
     const folder = sessionFolder(session);
@@ -110,7 +123,7 @@ async function capturePage(tab, payload) {
     const verified = await verifyDownload(downloadId);
     if (!verified) throw new Error("Chrome did not confirm the screenshot download.");
     const preview = await createThumbnail(dataUrl);
-    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), preview, transactionId: payload.transactionId || "", transition: "pending", confidence: payload.confidence || 0, fingerprint: payload.fingerprint || "" };
+    const record = { status: "saved", number, pageLabel, title: payload.title || tab.title || pageLabel, url: payload.url || tab.url || "", filename, downloadId, duplicateKey, fullPage: Boolean(payload.dataUrl), redacted, preview, transactionId: payload.transactionId || "", transition: "pending", confidence: payload.confidence || 0, fingerprint: payload.fingerprint || "" };
     const updated = await updateSession(tabId, (s) => ({ ...addEvent(s, record), captureCount: number }));
     return { ok: true, record, session: updated };
   } catch (error) {
@@ -215,6 +228,22 @@ async function exportSupportReport(tabId) {
   return { ok: true, downloadId };
 }
 
+async function addNote(tabId, note) {
+  const value = String(note || "").trim().slice(0, 160); if (!value) return { ok: false, reason: "Enter a note first." };
+  const session = await updateSession(tabId, (current) => addEvent(current, { status: "note", pageLabel: "Session note", note: value }));
+  return { ok: true, session };
+}
+
+async function exportReadinessReport(tabId) {
+  const session = await getSession(tabId); if (!session) return { ok: false, reason: "No session was found." };
+  const events = session.events || []; const saved = events.filter((event) => event.status === "saved"); const skipped = events.filter((event) => event.status === "skipped"); const issues = events.filter((event) => ["failed", "blocked"].includes(event.status)); const confirmed = saved.filter((event) => event.transition === "confirmed");
+  const score = Math.max(0, Math.min(100, Math.round((saved.length ? confirmed.length / saved.length : 0) * 65 + (issues.length ? 0 : 25) + (saved.length ? 10 : 0)))); const level = score >= 85 ? "High" : score >= 60 ? "Medium" : "Needs review";
+  const escape = (value) => String(value || "").replace(/[&<>"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[character]));
+  const rows = events.map((event) => `<tr><td>${escape(event.pageLabel || "Page")}</td><td>${escape(event.status)}</td><td>${escape(event.transition || "-")}</td><td>${escape(event.note || event.reason || (event.redacted ? "Detected fields redacted" : ""))}</td></tr>`).join("");
+  const html = `<!doctype html><meta charset="utf-8"><title>${escape(session.caseLabel)} pilot readiness</title><style>body{font:14px Arial;margin:40px;color:#10233d}header{border-bottom:4px solid #1768e5;padding-bottom:20px}.score{font-size:52px;color:#1768e5}section{margin:28px 0}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metrics div{border:1px solid #ccd7e4;padding:14px}.metrics b{display:block;font-size:24px}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d7e0ea;text-align:left}@media print{button{display:none}}</style><header><p>PAGE CAPTURE · PILOT READINESS</p><h1>${escape(session.caseLabel)}</h1><div class="score">${score}% · ${level}</div><p>${escape(session.jurisdiction)} · ${escape(session.licenseType)} · ${escape(session.allowedOrigin)}</p></header><section class="metrics"><div><b>${saved.length}</b>saved</div><div><b>${confirmed.length}</b>transitions confirmed</div><div><b>${skipped.length}</b>sensitive pages skipped</div><div><b>${issues.length}</b>issues</div></section><section><h2>How to use this report</h2><p>Review every issue and skipped page. Re-run the Test Lab or portal test after changing settings. Choose Print in your browser to save this report as a PDF.</p><button onclick="print()">Print or save PDF</button></section><table><thead><tr><th>Page or note</th><th>Status</th><th>Transition</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const url = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`; const filename = `${sessionFolder(session)}/pilot-readiness-report.html`; const downloadId = await chrome.downloads.download({ url, filename, conflictAction: "uniquify", saveAs: false }); return { ok: true, downloadId, filename, score, level };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     const tabId = Number(message?.tabId ?? sender.tab?.id);
@@ -229,6 +258,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "EXPORT_LEDGER": return exportLedger(tabId);
       case "EXPORT_SUMMARY": return exportSummary(tabId);
       case "EXPORT_SUPPORT": return exportSupportReport(tabId);
+      case "EXPORT_READINESS": return exportReadinessReport(tabId);
+      case "ADD_NOTE": return addNote(tabId, message.note);
       case "OPEN_SESSION_FOLDER": return openSessionFolder(tabId);
       case "REMOVE_CAPTURE": return removeCapture(tabId, message.eventId);
       default: return { ok: false, reason: "Unknown request." };
