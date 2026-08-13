@@ -6,13 +6,13 @@ const test = require("node:test");
 const { webcrypto } = require("node:crypto");
 
 function createHarness() {
-  const storage = {}; const downloads = []; const shown = []; let listener;
+  const storage = {}; const downloads = []; const shown = []; const removed = []; let listener;
   const context = { console, TextEncoder, crypto: webcrypto, btoa: (v) => Buffer.from(v, "binary").toString("base64"), setTimeout, clearTimeout };
   context.globalThis = context;
   context.chrome = {
     storage: { local: { get: async (key) => ({ [key]: storage[key] }), set: async (value) => Object.assign(storage, value) } },
     tabs: { sendMessage: async () => ({}), captureVisibleTab: async () => "data:image/png;base64,dGVzdA==", onRemoved: { addListener() {} } },
-    downloads: { download: async (options) => { downloads.push(options); return downloads.length; }, show: (id) => shown.push(id) },
+    downloads: { download: async (options) => { downloads.push(options); return downloads.length; }, show: (id) => shown.push(id), removeFile: async (id) => removed.push(id) },
     runtime: { onMessage: { addListener(fn) { listener = fn; } } }
   };
   context.importScripts = () => {};
@@ -20,7 +20,7 @@ function createHarness() {
   vm.runInContext(fs.readFileSync(require.resolve("../extension/core.js"), "utf8"), context);
   vm.runInContext(fs.readFileSync(require.resolve("../extension/background.js"), "utf8"), context);
   async function send(message, sender = {}) { return new Promise((resolve) => listener(message, sender, resolve)); }
-  return { send, downloads, shown };
+  return { send, downloads, shown, removed };
 }
 
 test("isolates a session, captures, skips sensitive pages, and blocks domain changes", async () => {
@@ -72,6 +72,15 @@ test("saves a supplied stitched full-page image without another viewport capture
   const dataUrl = "data:image/png;base64,ZnVsbC1wYWdl";
   const result = await h.send({ type: "CAPTURE_PAGE", payload: { pageLabel: "History", url: tab.url, origin: "https://board.test", dataUrl } }, { tab });
   assert.equal(result.ok, true); assert.equal(result.record.fullPage, true); assert.equal(h.downloads[0].url, dataUrl);
+});
+
+test("removes an individual screenshot while retaining an audit event", async () => {
+  const h = createHarness(); const tab = { id: 12, windowId: 2, title: "Profile", url: "https://board.test/app" };
+  await h.send({ type: "START_SESSION", payload: { tabId: 12, caseLabel: "TEST-1", jurisdiction: "UT", licenseType: "RN", allowedOrigin: "https://board.test" } });
+  const capture = await h.send({ type: "CAPTURE_PAGE", payload: { pageLabel: "Profile", url: tab.url, origin: "https://board.test" } }, { tab });
+  const removed = await h.send({ type: "REMOVE_CAPTURE", tabId: 12, eventId: capture.session.events[0].id });
+  assert.equal(removed.ok, true); assert.deepEqual(h.removed, [1]);
+  assert.equal(removed.session.events[0].status, "removed"); assert.ok(removed.session.events[0].removedAt);
 });
 
 test("creates a new download folder for every session", async () => {

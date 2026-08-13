@@ -133,6 +133,19 @@ async function openSessionFolder(tabId) {
   return { ok: true };
 }
 
+async function removeCapture(tabId, eventId) {
+  const session = await getSession(tabId);
+  const event = (session?.events || []).find((item) => item.id === eventId);
+  if (!event || event.status !== "saved" || !event.downloadId) return { ok: false, reason: "That screenshot is no longer available." };
+  try { await chrome.downloads.removeFile(event.downloadId); }
+  catch (error) { return { ok: false, reason: error?.message || "The screenshot file could not be removed." }; }
+  const updated = await updateSession(tabId, (current) => ({
+    ...current,
+    events: (current.events || []).map((item) => item.id === eventId ? ({ ...item, status: "removed", removedAt: new Date().toISOString(), preview: "" }) : item)
+  }));
+  return { ok: true, session: updated };
+}
+
 async function exportSummary(tabId) {
   const session = await getSession(tabId);
   if (!session) return { ok: false, reason: "No session was found." };
@@ -170,6 +183,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "EXPORT_LEDGER": return exportLedger(tabId);
       case "EXPORT_SUMMARY": return exportSummary(tabId);
       case "OPEN_SESSION_FOLDER": return openSessionFolder(tabId);
+      case "REMOVE_CAPTURE": return removeCapture(tabId, message.eventId);
       default: return { ok: false, reason: "Unknown request." };
     }
   })().then(sendResponse).catch((error) => sendResponse({ ok: false, reason: error?.message || "Unexpected extension error." }));

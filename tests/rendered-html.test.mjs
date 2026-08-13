@@ -22,18 +22,18 @@ test("server-renders the Page Capture landing page", async () => {
   assert.match(html, /Every page/);
   assert.match(html, /Already captured/);
   assert.match(html, /Privacy by default/);
-  assert.match(html, /Download v0\.4/);
+  assert.match(html, /Download v0\.5/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
 test("ships the extension package and social preview", async () => {
   await Promise.all([
-    access(new URL("../public/license-page-capture-v0.4.0.zip", import.meta.url)),
+    access(new URL("../public/license-page-capture-v0.5.0.zip", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../extension/manifest.json", import.meta.url)),
   ]);
   const manifest = JSON.parse(await readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"));
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "License Page Capture");
-  assert.equal(manifest.version, "0.4.0");
+  assert.equal(manifest.version, "0.5.0");
 });

@@ -185,10 +185,12 @@ footer { margin-top: 20px; color: #7a8798; font: 10px/1.3 "Consolas", monospace;
 .activity-list { display:grid; gap:6px; margin:0; padding:0; list-style:none; max-height:190px; overflow:auto; }
 .activity-item { display:grid; grid-template-columns:25px 1fr; gap:9px; align-items:center; padding:8px 9px; border:1px solid var(--line); border-radius:6px; background:rgba(255,255,255,.76); }
 .activity-item.has-preview { grid-template-columns:54px 25px 1fr; }
+.review-list .activity-item.has-preview { grid-template-columns:54px 25px 1fr auto; }
 .activity-item img { width:54px; height:38px; border:1px solid var(--line); border-radius:3px; object-fit:cover; object-position:top; }
 .activity-item div { display:grid; gap:2px; min-width:0; }.activity-item strong { overflow:hidden; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }.activity-item small { overflow:hidden; color:var(--muted); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
 .activity-marker { display:grid; place-items:center; width:23px; height:26px; border-radius:3px; background:#e4f4f1; color:var(--teal); font:700 11px/1 "Consolas",monospace; }
 .activity-item.skipped .activity-marker { background:#faefd9; color:var(--amber); }.activity-item.failed .activity-marker,.activity-item.blocked .activity-marker { background:#f8e3e5; color:#a02835; }
+.activity-item.removed { opacity:.62; }.remove-capture { min-height:28px; padding:0 7px; border:1px solid #d7aeb3; background:#fff; color:#8f2834; font-size:9px; }.remove-capture:hover { background:#fff1f2; }.remove-capture:disabled { opacity:.5; cursor:wait; }
 .finish { margin-top:9px; }.secondary { width:100%; margin-top:12px; }.session-tools { margin-top:10px; }
 .tool-button { width:100%; min-height:34px; border-top:1px solid var(--line); border-radius:0; background:transparent; color:var(--blue); font-size:11px; text-align:left; padding:0 11px; }
 .completion { text-align:center; }.complete-mark { display:grid; place-items:center; width:48px; height:48px; margin:0 auto 14px; border-radius:50%; background:#e8f7f4; color:var(--teal); font-size:24px; }.completion h2 { margin-top:8px; }

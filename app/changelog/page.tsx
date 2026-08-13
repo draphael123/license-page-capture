@@ -4,6 +4,8 @@ export default function Changelog() {
   return <main className="doc-page">
     <Link className="brand" href="/"><span className="brand-mark"><i /></span><span><strong>Page Capture</strong><small>Return home</small></span></Link>
     <p className="updated">Release history</p><h1>Changelog</h1>
+    <h2>v0.5.0 — August 13, 2026</h2>
+    <ul><li>Individual screenshot removal with confirmation.</li><li>Chrome Web Store submission package and listing assets.</li><li>Expanded compatibility checks across public state licensing sites.</li></ul>
     <h2>v0.4.0 — August 13, 2026</h2>
     <ul><li>Clear setup, capturing, and completion stages.</li><li>Optional full-page scroll-and-stitch capture.</li><li>Thumbnail review with saved, skipped, and failed totals.</li><li>Simplified session actions and technical tools.</li></ul>
     <h2>v0.3.0 — August 13, 2026</h2>

@@ -15,16 +15,18 @@ function setFeedback(view, text, tone = "") {
   target.textContent = text; target.className = `feedback ${tone}`.trim();
 }
 
-function eventItem(event) {
+function eventItem(event, review = false) {
   const item = document.createElement("li");
   const status = event.status || "saved";
   item.className = `activity-item ${status}${event.preview ? " has-preview" : ""}`;
   if (event.preview) { const image = document.createElement("img"); image.src = event.preview; image.alt = ""; item.append(image); }
-  const marker = document.createElement("span"); marker.className = "activity-marker"; marker.textContent = status === "saved" ? "✓" : status === "skipped" ? "–" : "!";
+  const marker = document.createElement("span"); marker.className = "activity-marker"; marker.textContent = status === "saved" ? "✓" : status === "skipped" || status === "removed" ? "–" : "!";
   const copy = document.createElement("div");
   const name = document.createElement("strong"); name.textContent = event.pageLabel || "Application page";
-  const detail = document.createElement("small"); detail.textContent = status === "saved" ? "Saved" : status === "skipped" ? `Skipped · ${event.reason || "sensitive screen"}` : `Needs review · ${event.reason || status}`;
-  copy.append(name, detail); item.append(marker, copy); return item;
+  const detail = document.createElement("small"); detail.textContent = status === "saved" ? "Saved" : status === "removed" ? "Screenshot removed" : status === "skipped" ? `Skipped · ${event.reason || "sensitive screen"}` : `Needs review · ${event.reason || status}`;
+  copy.append(name, detail); item.append(marker, copy);
+  if (review && status === "saved") { const remove = document.createElement("button"); remove.type = "button"; remove.className = "remove-capture"; remove.textContent = "Remove"; remove.dataset.eventId = event.id; remove.setAttribute("aria-label", `Remove ${event.pageLabel || "application page"} screenshot`); item.append(remove); }
+  return item;
 }
 
 function render(session) {
@@ -45,7 +47,7 @@ function render(session) {
     byId("savedTotal").textContent = events.filter((event) => event.status === "saved").length;
     byId("skippedTotal").textContent = events.filter((event) => event.status === "skipped").length;
     byId("failedTotal").textContent = events.filter((event) => ["failed", "blocked"].includes(event.status)).length;
-    byId("reviewList").replaceChildren(...events.slice().reverse().map(eventItem));
+    byId("reviewList").replaceChildren(...events.slice().reverse().map((event) => eventItem(event, true)));
   }
 }
 
@@ -106,6 +108,14 @@ byId("exportSummaryActive").addEventListener("click", () => runSessionAction("EX
 byId("exportLedger").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "complete", "Technical log downloaded."));
 byId("exportLedgerActive").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "active", "Technical log downloaded."));
 byId("newSession").addEventListener("click", async () => { const tab = await activeTab(); await message({ type: "RESET_SESSION", tabId: tab?.id }); sessionForm.reset(); byId("skipSensitive").checked = true; byId("safeMode").checked = true; render(null); });
+byId("reviewList").addEventListener("click", async (event) => {
+  const button = event.target.closest(".remove-capture"); if (!button) return;
+  const item = button.closest(".activity-item"); const name = item?.querySelector("strong")?.textContent || "this screenshot";
+  if (!confirm(`Remove ${name} from your Downloads folder? This cannot be undone.`)) return;
+  button.disabled = true; const tab = await activeTab(); const response = await message({ type: "REMOVE_CAPTURE", tabId: tab?.id, eventId: button.dataset.eventId });
+  if (response?.ok) { render(response.session); setFeedback("complete", `${name} removed.`); }
+  else { button.disabled = false; setFeedback("complete", response?.reason || "The screenshot could not be removed.", "error"); }
+});
 ["caseLabel", "jurisdiction", "licenseType"].forEach((id) => byId(id).addEventListener("input", updateFolderPreview));
 
 activeTab().then(async (tab) => { await loadPortalPreset(tab); return message({ type: "GET_SESSION", tabId: tab?.id }); }).then((response) => render(response?.session));

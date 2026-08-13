@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - 2026-08-13
+
+- Added confirmed individual screenshot removal from the completed-test review.
+- Added Chrome Web Store icons, listing assets, privacy declarations, permission justifications, and reviewer instructions.
+- Expanded public compatibility checks across six state licensing sites.
+
 ## 0.4.0 - 2026-08-13
 
 - Rebuilt the popup as a clear Set up test, Capturing, and Test complete workflow.
