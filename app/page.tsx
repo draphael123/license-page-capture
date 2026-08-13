@@ -117,7 +117,7 @@ export default function Home() {
       </section>
 
       <section className="demo-section">
-        <div className="demo-intro"><p className="overline">Try it here</p><h2>Advance a mock application.<br />Watch the record build.</h2><p>This simulation shows the intended behavior without installing anything or using real provider information.</p></div>
+        <div className="demo-intro"><p className="overline">Capture test lab</p><h2>Three workflows.<br />No login or real data.</h2><p>Test licensing, credentialing, and insurance-style material with long pages, varied controls, and an intentionally sensitive step that should be skipped.</p></div>
         <CaptureDemo />
       </section>
 

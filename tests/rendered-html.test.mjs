@@ -22,6 +22,9 @@ test("server-renders the Page Capture landing page", async () => {
   assert.match(html, /Every page/);
   assert.match(html, /Already captured/);
   assert.match(html, /Privacy by default/);
+  assert.match(html, /Three workflows/);
+  assert.match(html, /Provider credentialing/);
+  assert.match(html, /Insurance enrollment/);
   assert.match(html, /Download v0\.5/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
