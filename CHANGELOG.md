@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 — Complete-page lifecycle
+
+- Save the first page automatically when a test starts.
+- Save the final page before a test can finish.
+- Clarify sensitive modes, including exact capture of visible sensitive values.
+- Explain that password fields remain masked by the webpage.
+
 ## 1.2.0 — Production hardening
 
 - Added durable transaction states for every supported forward navigation.

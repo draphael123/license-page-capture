@@ -41,8 +41,8 @@
               <label>License<input id="licenseType" name="licenseType" maxlength="40" placeholder="RN"></label>
             </div>
             <label class="retention-row">Sensitive screens
-              <select id="sensitiveMode"><option value="skip" selected>Pause and skip (recommended)</option><option value="redact">Blur detected fields and capture</option><option value="capture">Capture without redaction</option></select>
-              <small>Redaction covers detected fields in the visible browser area. Always review the saved image.</small>
+              <select id="sensitiveMode"><option value="skip" selected>Do not capture sensitive pages (recommended)</option><option value="redact">Cover detected sensitive fields</option><option value="capture">Capture exactly as displayed — no redaction</option></select>
+              <small>Exact capture can include visible SSNs, payment details, and codes. Password inputs remain masked by the webpage. Images save locally in Downloads.</small>
             </label>
             <label class="check-row"><input id="safeMode" name="safeMode" type="checkbox" checked><span><strong>Stop if saving fails</strong><small>Do not advance without a screenshot.</small></span></label>
             <label class="check-row"><input id="fullPage" name="fullPage" type="checkbox"><span><strong>Capture the entire page</strong><small>Scrolls and stitches long pages before continuing. This can take a few seconds.</small></span></label>

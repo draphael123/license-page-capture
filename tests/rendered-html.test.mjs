@@ -53,14 +53,23 @@ test("server-renders the dedicated no-login test lab", async () => {
 
 test("ships the extension package and social preview", async () => {
   await Promise.all([
-    access(new URL("../public/license-page-capture-v1.2.0.zip", import.meta.url)),
+    access(new URL("../public/license-page-capture-v1.2.1.zip", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../extension/manifest.json", import.meta.url)),
   ]);
   const manifest = JSON.parse(await readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"));
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "License Page Capture");
-  assert.equal(manifest.version, "1.2.0");
+  assert.equal(manifest.version, "1.2.1");
+});
+
+test("captures the first and final pages and exposes an exact sensitive mode", async () => {
+  const popup = await readFile(new URL("../extension/popup.js", import.meta.url), "utf8");
+  const markup = await readFile(new URL("../extension/popup.html", import.meta.url), "utf8");
+  assert.match(popup, /First page saved/);
+  assert.match(popup, /finalCapture/);
+  assert.match(markup, /Capture exactly as displayed/);
+  assert.match(markup, /Password inputs remain masked/);
 });
 
 test("ships accessible guided product videos", async () => {

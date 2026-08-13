@@ -149,7 +149,11 @@ sessionForm.addEventListener("submit", async (event) => {
     retentionDays: Number(byId("retentionDays").value),
     tabId: tab.id, allowedOrigin: new URL(tab.url).origin
   }});
-  if (response?.ok) { await savePortalPreset(new URL(tab.url).origin); render(response.session); }
+  if (response?.ok) {
+    await savePortalPreset(new URL(tab.url).origin);
+    try { const first = await chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_CURRENT", force: false }); render(first?.session || response.session); setFeedback("active", first?.ok ? "First page saved. Continue through the application." : first?.skipped ? `First page skipped: ${first.reason}` : "Test started. Review the first-page capture status.", first?.ok ? "" : "warning"); }
+    catch { render(response.session); setFeedback("active", "Test started. Use Capture current page if the first page is not listed.", "warning"); }
+  }
   else setFeedback("setup", response?.reason || "The test could not start.", "error");
 });
 
@@ -164,7 +168,12 @@ byId("captureNow").addEventListener("click", async () => {
 });
 
 byId("stopSession").addEventListener("click", async () => {
-  const tab = await activeTab(); const response = await message({ type: "STOP_SESSION", tabId: tab?.id }); render(response?.session);
+  const tab = await activeTab();
+  try {
+    const finalCapture = await chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_CURRENT", force: false });
+    if (!finalCapture?.ok && !finalCapture?.skipped) { setFeedback("active", finalCapture?.reason || "The final page was not saved. Resolve this before finishing.", "error"); return; }
+  } catch { setFeedback("active", "The final page could not be verified. Reload the page and try Finish test again.", "error"); return; }
+  const response = await message({ type: "STOP_SESSION", tabId: tab?.id }); render(response?.session);
 });
 byId("resolveAnomaly").addEventListener("click", async () => { const tab = await activeTab(); const response = await message({ type: "RESOLVE_ANOMALY", tabId: tab?.id }); if (response?.ok) { render(response.session); setFeedback("active", "Capture resumed. Continue only after confirming the current page is correct."); } });
 
