@@ -4,6 +4,8 @@ export default function Changelog() {
   return <main className="doc-page">
     <Link className="brand" href="/"><span className="brand-mark"><i /></span><span><strong>Page Capture</strong><small>Return home</small></span></Link>
     <p className="updated">Release history</p><h1>Changelog</h1>
+    <h2>v0.6.0 — August 13, 2026</h2>
+    <ul><li>Daily and on-demand update availability checks for unpacked installs.</li><li>Dedicated download and update guide.</li><li>Extension-state gallery, sticky Test Lab navigation, and public testing scorecard.</li></ul>
     <h2>v0.5.0 — August 13, 2026</h2>
     <ul><li>Individual screenshot removal with confirmation.</li><li>Chrome Web Store submission package and listing assets.</li><li>Expanded compatibility checks across public state licensing sites.</li></ul>
     <h2>v0.4.0 — August 13, 2026</h2>

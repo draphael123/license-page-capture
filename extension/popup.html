@@ -14,6 +14,11 @@
         <div id="statusChip" class="status-chip">Ready</div>
       </header>
 
+      <section id="updateNotice" class="update-notice" hidden>
+        <div><strong id="updateTitle">Update available</strong><small id="updateCopy"></small></div>
+        <button id="downloadUpdate" type="button">Download</button>
+      </section>
+
       <section id="setupView" class="panel">
         <p class="stage-label">Set up test</p>
         <h2>What should this test be called?</h2>
@@ -85,7 +90,7 @@
         <button id="newSession" class="text-button" type="button">Start another test</button>
       </section>
 
-      <footer>Saved locally in your Downloads folder</footer>
+      <footer><span>Saved locally in your Downloads folder</span><button id="checkUpdates" type="button">Check for updates</button></footer>
     </main>
     <script src="popup.js"></script>
   </body>

@@ -5,6 +5,8 @@ const activeView = byId("activeView");
 const completeView = byId("completeView");
 const sessionForm = byId("sessionForm");
 const statusChip = byId("statusChip");
+const RELEASE_URL = "https://license-page-capture-repo.vercel.app/latest.json";
+let availableRelease = null;
 
 async function message(payload) { return chrome.runtime.sendMessage(payload); }
 async function activeTab() { return (await chrome.tabs.query({ active: true, currentWindow: true }))[0]; }
@@ -57,6 +59,37 @@ function updateFolderPreview() {
   const license = clean(byId("licenseType").value, "Application");
   byId("folderPreview").textContent = `Downloads/License Page Captures/${test}/${state}_${license}/new-session/`;
 }
+
+function newerVersion(latest, current) {
+  const a = String(latest).split(".").map(Number); const b = String(current).split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+  }
+  return false;
+}
+
+async function checkForUpdates(showCurrent = false) {
+  const button = byId("checkUpdates"); button.disabled = true; button.textContent = "Checking…";
+  try {
+    const response = await fetch(`${RELEASE_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("Update check failed");
+    const release = await response.json(); const current = chrome.runtime.getManifest().version;
+    availableRelease = newerVersion(release.version, current) ? release : null;
+    byId("updateNotice").hidden = !availableRelease;
+    if (availableRelease) {
+      byId("updateTitle").textContent = `Version ${release.version} is ready`;
+      byId("updateCopy").textContent = "Download it, replace the unpacked folder, then select Reload on chrome://extensions.";
+    } else if (showCurrent) setFeedback(setupView.hidden ? (completeView.hidden ? "active" : "complete") : "setup", `Version ${current} is current.`);
+    await chrome.storage.local.set({ lastUpdateCheck: new Date().toISOString() });
+  } catch {
+    if (showCurrent) setFeedback(setupView.hidden ? (completeView.hidden ? "active" : "complete") : "setup", "Could not check for updates. Try again later.", "error");
+  } finally { button.disabled = false; button.textContent = "Check for updates"; }
+}
+
+byId("checkUpdates").addEventListener("click", () => checkForUpdates(true));
+byId("downloadUpdate").addEventListener("click", () => {
+  if (availableRelease?.downloadUrl) chrome.downloads.download({ url: availableRelease.downloadUrl, saveAs: true });
+});
 
 async function loadPortalPreset(tab) {
   if (!tab?.url?.startsWith("http")) return;
@@ -119,3 +152,6 @@ byId("reviewList").addEventListener("click", async (event) => {
 ["caseLabel", "jurisdiction", "licenseType"].forEach((id) => byId(id).addEventListener("input", updateFolderPreview));
 
 activeTab().then(async (tab) => { await loadPortalPreset(tab); return message({ type: "GET_SESSION", tabId: tab?.id }); }).then((response) => render(response?.session));
+chrome.storage.local.get("lastUpdateCheck").then(({ lastUpdateCheck }) => {
+  if (!lastUpdateCheck || Date.now() - new Date(lastUpdateCheck).getTime() > 24 * 60 * 60 * 1000) checkForUpdates(false);
+});

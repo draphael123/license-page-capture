@@ -169,7 +169,11 @@ button:focus-visible { outline: 3px solid rgba(23, 104, 229, 0.3); outline-offse
 .quiet { background: #e7ecf2; color: var(--ink); }
 .quiet:hover { background: #dbe2ea; }
 
-footer { margin-top: 20px; color: #7a8798; font: 10px/1.3 "Consolas", monospace; text-align: center; }
+footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:20px; color:#7a8798; font:10px/1.3 "Consolas",monospace; text-align:left; }
+footer button { padding:0; border:0; background:transparent; color:var(--blue); font:inherit; cursor:pointer; white-space:nowrap; }
+.update-notice { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; margin:14px 18px 0; padding:11px 12px; border:1px solid #9fc4ff; border-radius:7px; background:#eaf2ff; }
+.update-notice div { display:grid; gap:3px; }.update-notice strong { color:var(--blue-dark); font-size:11px; }.update-notice small { color:#596b83; font-size:9px; line-height:1.45; }
+.update-notice button { min-height:30px; padding:0 10px; border:0; border-radius:4px; background:var(--blue); color:#fff; font-size:10px; font-weight:750; }
 
 .details-card { margin-top: 3px; }
 .details-card .field-row { padding: 0 11px; }
