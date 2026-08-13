@@ -35,7 +35,7 @@
           <p class="folder-preview"><span>Save to</span><code id="folderPreview">Downloads/License Page Captures/</code></p>
           <div id="preflight" class="preflight"><span>○</span><div><strong>Checking this page</strong><small>Capture access and navigation controls</small></div></div>
           <details class="advanced">
-            <summary>Advanced settings <span>Optional</span></summary>
+            <summary>Settings and tools <span>Optional</span></summary>
             <div class="field-row">
               <label>State<input id="jurisdiction" name="jurisdiction" maxlength="40" placeholder="Utah"></label>
               <label>License<input id="licenseType" name="licenseType" maxlength="40" placeholder="RN"></label>
@@ -53,6 +53,7 @@
               <input id="customLabels" name="customLabels" placeholder="Continue application, Go forward">
             </label>
             <button id="clearPortalRule" class="tool-button" type="button">Forget saved rule for this portal</button>
+            <button class="tool-button tutorial-link" data-tutorial="daily-use" type="button">Learn how these settings work</button>
           </details>
           <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
           <button class="primary" type="submit">Start test</button>
@@ -70,12 +71,13 @@
         <button id="captureNow" class="secondary" type="button">Capture current page</button>
         <button id="stopSession" class="primary finish" type="button">Finish test</button>
         <details class="advanced session-tools">
-          <summary>Session tools</summary>
+          <summary>Settings and tools</summary>
           <button id="openFolderActive" class="tool-button" type="button">Open screenshots</button>
           <button id="exportSummaryActive" class="tool-button" type="button">Create summary</button>
           <button id="exportLedgerActive" class="tool-button" type="button">Download technical log</button>
           <button id="exportSupportActive" class="tool-button" type="button">Export privacy-safe support report</button>
           <button id="exportReadinessActive" class="tool-button" type="button">Create pilot-readiness report</button>
+          <button class="tool-button tutorial-link" data-tutorial="daily-use" type="button">Open capture tutorials</button>
         </details>
       </section>
 
@@ -95,15 +97,16 @@
         <button id="openFolder" class="primary" type="button">Open screenshots</button>
         <button id="exportSummary" class="secondary" type="button">Create session summary</button>
         <details class="advanced session-tools">
-          <summary>More options</summary>
+          <summary>Settings and tools</summary>
           <button id="exportLedger" class="tool-button" type="button">Download technical log</button>
           <button id="exportSupport" class="tool-button" type="button">Export privacy-safe support report</button>
           <button id="exportReadiness" class="tool-button" type="button">Create pilot-readiness report</button>
+          <button class="tool-button tutorial-link" data-tutorial="privacy" type="button">Learn how to review this record</button>
         </details>
         <button id="newSession" class="text-button" type="button">Start another test</button>
       </section>
 
-      <footer><span>Saved locally in your Downloads folder</span><button id="checkUpdates" type="button">Check for updates</button></footer>
+      <footer><span>Saved locally in Downloads</span><div><button id="helpTutorials" type="button">Help & tutorials</button><button id="restartGuide" type="button">Restart guide</button><button id="checkUpdates" type="button">Check updates</button></div></footer>
     </main>
     <script src="popup.js"></script>
   </body>

@@ -80,19 +80,20 @@ export default function Home() {
           <a href="/test-lab">Test Lab</a>
           <a href="/compatibility">Compatibility</a>
           <a href="/help">Help</a>
-          <a className="nav-cta" href="/download">Download v1.0</a>
+          <a href="/tutorials">Tutorials</a>
+          <a className="nav-cta" href="/download">Download v1.1</a>
         </div>
       </nav>
 
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="kicker"><span>â—</span> Developer preview Â· pilot before production use</p>
-          <h1>Every page.<br /><em>Already captured.</em></h1>
+          <h1>Automatic screenshots for multi-step applications.</h1>
           <p className="hero-text">
-            Page Capture saves a screenshot just before you advance through a licensing applicationâ€”so your audit trail builds itself while you work.
+            Page Capture saves and verifies the current page before a recognized Next action continues. Screenshots stay in a numbered local folder for review.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="/download">Download v1.0 <span>â†“</span></a>
+            <a className="button primary" href="/download">Download v1.1 <span>â†“</span></a>
             <a className="button text-button" href="#install">See installation <span>â†˜</span></a>
           </div>
           <p className="compatibility">Chrome and Microsoft Edge Â· Updated August 13, 2026</p>
@@ -115,7 +116,7 @@ export default function Home() {
       </section>
 
       <section className="test-lab-teaser">
-        <div><p className="overline">Capture test lab</p><h2>Test it before<br />you trust it.</h2></div>
+        <div><p className="overline">Capture test lab</p><h2>Run a fictional-data test.</h2></div>
         <div><p>Open a dedicated workspace with licensing, credentialing, and insurance template forms. No login, submissions, or real personal information.</p><a className="button primary" href="/test-lab">Open the test lab <span>â†’</span></a></div>
       </section>
 
@@ -182,7 +183,7 @@ export default function Home() {
           <li><span>3</span><div><strong>Load the folder</strong><p>Choose Load unpacked and select the extracted extension folder.</p></div></li>
           <li><span>4</span><div><strong>Start a pilot</strong><p>Reload the licensing portal, open Page Capture, create a case, and work normally.</p></div></li>
         </ol>
-        <a className="button primary download-wide" href="/download">Download Page Capture v1.0 <span>â†“</span></a>
+        <a className="button primary download-wide" href="/download">Download Page Capture v1.1 <span>â†“</span></a>
       </section>
 
       <section className="section faq" id="faq">
@@ -195,11 +196,11 @@ export default function Home() {
       <section className="closing">
         <p className="overline light">A cleaner application record</p>
         <h2>Stop stopping<br />to take screenshots.</h2>
-        <a className="button inverse" href="/download">Start with v1.0 <span>â†’</span></a>
+        <a className="button inverse" href="/download">Download v1.1 <span>â†’</span></a>
       </section>
 
       <footer className="site-footer">
-        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Developer preview Â· v1.0.0</small></span></div>
+        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /></span><span><strong>Page Capture</strong><small>Supervised pilot · v1.1.0</small></span></div>
         <p>Local-first tooling for licensing operations.</p>
         <div><a href="/privacy">Privacy</a><a href="/security">Security</a><a href="/changelog">Changelog</a><a href="https://github.com/draphael123/license-page-capture/issues/new?template=portal.yml">Report issue</a><a href="https://github.com/draphael123/license-page-capture">Source</a></div>
       </footer>

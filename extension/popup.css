@@ -169,7 +169,8 @@ button:focus-visible { outline: 3px solid rgba(23, 104, 229, 0.3); outline-offse
 .quiet { background: #e7ecf2; color: var(--ink); }
 .quiet:hover { background: #dbe2ea; }
 
-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:20px; color:#7a8798; font:10px/1.3 "Consolas",monospace; text-align:left; }
+footer { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-top:20px; color:#7a8798; font:10px/1.3 "Consolas",monospace; text-align:left; }
+footer>div { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; max-width:230px; }
 footer button { padding:0; border:0; background:transparent; color:var(--blue); font:inherit; cursor:pointer; white-space:nowrap; }
 .update-notice { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; margin:14px 18px 0; padding:11px 12px; border:1px solid #9fc4ff; border-radius:7px; background:#eaf2ff; }
 .update-notice div { display:grid; gap:3px; }.update-notice strong { color:var(--blue-dark); font-size:11px; }.update-notice small { color:#596b83; font-size:9px; line-height:1.45; }
@@ -198,6 +199,7 @@ footer button { padding:0; border:0; background:transparent; color:var(--blue); 
 .activity-item.removed { opacity:.62; }.remove-capture { min-height:28px; padding:0 7px; border:1px solid #d7aeb3; background:#fff; color:#8f2834; font-size:9px; }.remove-capture:hover { background:#fff1f2; }.remove-capture:disabled { opacity:.5; cursor:wait; }
 .finish { margin-top:9px; }.secondary { width:100%; margin-top:12px; }.session-tools { margin-top:10px; }
 .tool-button { width:100%; min-height:34px; border-top:1px solid var(--line); border-radius:0; background:transparent; color:var(--blue); font-size:11px; text-align:left; padding:0 11px; }
+.tutorial-link { color:#4f6178; }
 .completion { text-align:center; }.complete-mark { display:grid; place-items:center; width:48px; height:48px; margin:0 auto 14px; border-radius:50%; background:#e8f7f4; color:var(--teal); font-size:24px; }.completion h2 { margin-top:8px; }
 .result-grid { display:grid; grid-template-columns:repeat(4,1fr); margin-top:18px; border:1px solid var(--line); border-radius:7px; background:var(--white); }
 .result-grid div { display:grid; gap:4px; padding:13px 5px; border-right:1px solid var(--line); }.result-grid div:last-child { border:0; }.result-grid strong { font:700 22px/1 "Consolas",monospace; }.result-grid span { color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.05em; }

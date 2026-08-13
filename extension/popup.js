@@ -36,7 +36,7 @@ function eventItem(event, review = false) {
 
 function render(session) {
   renderedSession = session || null;
-  if (onboardingRequired && !session) { onboardingView.hidden = false; setupView.hidden = true; activeView.hidden = true; completeView.hidden = true; return; }
+  if (onboardingRequired) { onboardingView.hidden = false; setupView.hidden = true; activeView.hidden = true; completeView.hidden = true; return; }
   onboardingView.hidden = true;
   const active = Boolean(session?.active); const complete = Boolean(session && !active && session.startedAt);
   setupView.hidden = active || complete; activeView.hidden = !active; completeView.hidden = !complete;
@@ -98,6 +98,10 @@ byId("checkUpdates").addEventListener("click", () => checkForUpdates(true));
 byId("downloadUpdate").addEventListener("click", () => {
   if (availableRelease?.downloadUrl) chrome.downloads.download({ url: availableRelease.downloadUrl, saveAs: true });
 });
+const TUTORIAL_URL = "https://license-page-capture-repo.vercel.app/tutorials";
+byId("helpTutorials").addEventListener("click", () => chrome.tabs.create({ url: TUTORIAL_URL }));
+byId("restartGuide").addEventListener("click", async () => { await chrome.storage.local.set({ onboardingComplete: false }); onboardingRequired = true; render(renderedSession); });
+document.querySelectorAll(".tutorial-link").forEach((button) => button.addEventListener("click", () => chrome.tabs.create({ url: `${TUTORIAL_URL}?track=${encodeURIComponent(button.dataset.tutorial || "All")}` })));
 
 async function loadPortalPreset(tab) {
   if (!tab?.url?.startsWith("http")) return;
