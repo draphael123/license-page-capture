@@ -50,6 +50,7 @@ function render(session) {
     byId("skippedTotal").textContent = events.filter((event) => event.status === "skipped").length;
     byId("failedTotal").textContent = events.filter((event) => ["failed", "blocked"].includes(event.status)).length;
     byId("reviewList").replaceChildren(...events.slice().reverse().map((event) => eventItem(event, true)));
+    if (session.reviewAfter) setFeedback("complete", `Review these local files by ${new Date(session.reviewAfter).toLocaleDateString()}.`, "warning");
   }
 }
 
@@ -103,6 +104,17 @@ async function savePortalPreset(origin) {
   await chrome.storage.local.set({ portalPresets });
 }
 
+async function runPreflight(tab) {
+  const box = byId("preflight");
+  if (!tab?.id || !tab.url?.startsWith("http")) { box.className = "preflight failed"; box.innerHTML = "<span>!</span><div><strong>Open a normal webpage</strong><small>Browser settings and extension pages cannot be captured.</small></div>"; return; }
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, { type: "PREFLIGHT", customLabels: byId("customLabels").value.split(",").map((item) => item.trim()).filter(Boolean) });
+    const found = result.navigationControls?.length || 0;
+    box.className = `preflight ${found ? "passed" : "warning"}`;
+    box.innerHTML = `<span>${found ? "✓" : "!"}</span><div><strong>${found ? "Ready to test" : "No Next control detected yet"}</strong><small>${result.sensitive ? "Sensitive fields are present and will be skipped." : found ? `${found} navigation control${found === 1 ? "" : "s"} detected.` : "You can add the button label below or start on the first form page."}</small></div>`;
+  } catch { box.className = "preflight failed"; box.innerHTML = "<span>!</span><div><strong>Reload this webpage</strong><small>The extension needs to reconnect before the test starts.</small></div>"; }
+}
+
 sessionForm.addEventListener("submit", async (event) => {
   event.preventDefault(); const tab = await activeTab();
   if (!tab?.id || !tab.url?.startsWith("http")) { setFeedback("setup", "Open an application webpage first.", "error"); return; }
@@ -110,6 +122,7 @@ sessionForm.addEventListener("submit", async (event) => {
     caseLabel: byId("caseLabel").value, jurisdiction: byId("jurisdiction").value || "General",
     licenseType: byId("licenseType").value || "Application", skipSensitive: byId("skipSensitive").checked,
     safeMode: byId("safeMode").checked, fullPage: byId("fullPage").checked, customLabels: byId("customLabels").value,
+    retentionDays: Number(byId("retentionDays").value),
     tabId: tab.id, allowedOrigin: new URL(tab.url).origin
   }});
   if (response?.ok) { await savePortalPreset(new URL(tab.url).origin); render(response.session); }
@@ -140,6 +153,8 @@ byId("exportSummary").addEventListener("click", () => runSessionAction("EXPORT_S
 byId("exportSummaryActive").addEventListener("click", () => runSessionAction("EXPORT_SUMMARY", "active", "Session summary created."));
 byId("exportLedger").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "complete", "Technical log downloaded."));
 byId("exportLedgerActive").addEventListener("click", () => runSessionAction("EXPORT_LEDGER", "active", "Technical log downloaded."));
+byId("exportSupport").addEventListener("click", () => runSessionAction("EXPORT_SUPPORT", "complete", "Privacy-safe support report downloaded."));
+byId("exportSupportActive").addEventListener("click", () => runSessionAction("EXPORT_SUPPORT", "active", "Privacy-safe support report downloaded."));
 byId("newSession").addEventListener("click", async () => { const tab = await activeTab(); await message({ type: "RESET_SESSION", tabId: tab?.id }); sessionForm.reset(); byId("skipSensitive").checked = true; byId("safeMode").checked = true; render(null); });
 byId("reviewList").addEventListener("click", async (event) => {
   const button = event.target.closest(".remove-capture"); if (!button) return;
@@ -151,7 +166,7 @@ byId("reviewList").addEventListener("click", async (event) => {
 });
 ["caseLabel", "jurisdiction", "licenseType"].forEach((id) => byId(id).addEventListener("input", updateFolderPreview));
 
-activeTab().then(async (tab) => { await loadPortalPreset(tab); return message({ type: "GET_SESSION", tabId: tab?.id }); }).then((response) => render(response?.session));
+activeTab().then(async (tab) => { await loadPortalPreset(tab); await runPreflight(tab); return message({ type: "GET_SESSION", tabId: tab?.id }); }).then((response) => render(response?.session));
 chrome.storage.local.get("lastUpdateCheck").then(({ lastUpdateCheck }) => {
   if (!lastUpdateCheck || Date.now() - new Date(lastUpdateCheck).getTime() > 24 * 60 * 60 * 1000) checkForUpdates(false);
 });

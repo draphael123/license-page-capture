@@ -35,12 +35,16 @@
             </div>
           </details>
           <p class="folder-preview"><span>Save to</span><code id="folderPreview">Downloads/License Page Captures/</code></p>
+          <div id="preflight" class="preflight"><span>○</span><div><strong>Checking this page</strong><small>Capture access and navigation controls</small></div></div>
           <details class="advanced">
             <summary>Capture safeguards</summary>
             <label class="check-row"><input id="skipSensitive" name="skipSensitive" type="checkbox" checked><span><strong>Skip sensitive screens</strong><small>Passwords, SSNs, payment, and verification codes.</small></span></label>
             <label class="check-row"><input id="safeMode" name="safeMode" type="checkbox" checked><span><strong>Stop if saving fails</strong><small>Do not advance without a screenshot.</small></span></label>
             <label class="check-row"><input id="fullPage" name="fullPage" type="checkbox"><span><strong>Capture the entire page</strong><small>Scrolls and stitches long pages before continuing. This can take a few seconds.</small></span></label>
           </details>
+          <label class="retention-row">Review reminder
+            <select id="retentionDays"><option value="0">No reminder</option><option value="7">After 7 days</option><option value="30" selected>After 30 days</option><option value="90">After 90 days</option></select>
+          </label>
           <details class="advanced">
             <summary>Portal-specific controls</summary>
             <label>Additional Next-button labels
@@ -66,6 +70,7 @@
           <button id="openFolderActive" class="tool-button" type="button">Open screenshots</button>
           <button id="exportSummaryActive" class="tool-button" type="button">Create summary</button>
           <button id="exportLedgerActive" class="tool-button" type="button">Download technical log</button>
+          <button id="exportSupportActive" class="tool-button" type="button">Export privacy-safe support report</button>
         </details>
       </section>
 
@@ -86,6 +91,7 @@
         <details class="advanced session-tools">
           <summary>More options</summary>
           <button id="exportLedger" class="tool-button" type="button">Download technical log</button>
+          <button id="exportSupport" class="tool-button" type="button">Export privacy-safe support report</button>
         </details>
         <button id="newSession" class="text-button" type="button">Start another test</button>
       </section>

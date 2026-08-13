@@ -4,6 +4,8 @@ export default function Changelog() {
   return <main className="doc-page">
     <Link className="brand" href="/"><span className="brand-mark"><i /></span><span><strong>Page Capture</strong><small>Return home</small></span></Link>
     <p className="updated">Release history</p><h1>Changelog</h1>
+    <h2>v0.7.0 — August 13, 2026</h2>
+    <ul><li>Preflight checks for page access, sensitive fields, and detectable navigation controls.</li><li>Privacy-safe diagnostic reports that omit form values, screenshots, case names, filenames, and full URLs.</li><li>Retention reminder preference and clearer session recovery.</li><li>Download checksum verification and expanded website reliability evidence.</li></ul>
     <h2>v0.6.0 — August 13, 2026</h2>
     <ul><li>Daily and on-demand update availability checks for unpacked installs.</li><li>Dedicated download and update guide.</li><li>Extension-state gallery, sticky Test Lab navigation, and public testing scorecard.</li></ul>
     <h2>v0.5.0 — August 13, 2026</h2>

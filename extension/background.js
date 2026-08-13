@@ -60,8 +60,9 @@ async function startSession(payload) {
     version: 2, tabId, active: true, caseLabel: payload.caseLabel.trim(),
     jurisdiction: payload.jurisdiction.trim(), licenseType: payload.licenseType.trim(),
     skipSensitive: payload.skipSensitive !== false, safeMode: payload.safeMode !== false, fullPage: payload.fullPage === true,
-    customLabels: String(payload.customLabels || "").split(",").map((x) => x.trim()).filter(Boolean),
+    customLabels: String(payload.customLabels || "").split(",").map((x) => x.trim()).filter(Boolean), retentionDays: Number(payload.retentionDays || 0),
     allowedOrigin: payload.allowedOrigin || "", startedAt: new Date().toISOString(),
+    reviewAfter: Number(payload.retentionDays || 0) ? new Date(Date.now() + Number(payload.retentionDays) * 86400000).toISOString() : "",
     captureCount: 0, events: []
   };
   await updateSession(tabId, () => session);
@@ -170,6 +171,27 @@ async function exportLedger(tabId) {
   return { ok: true, downloadId, filename };
 }
 
+async function exportSupportReport(tabId) {
+  const session = await getSession(tabId);
+  if (!session) return { ok: false, reason: "No session was found." };
+  const report = {
+    reportVersion: 1,
+    extensionVersion: chrome.runtime.getManifest().version,
+    generatedAt: new Date().toISOString(),
+    browser: navigator.userAgent,
+    portalOrigin: session.allowedOrigin,
+    captureMode: session.fullPage ? "full-page" : "visible-area",
+    safeguards: { skipSensitive: session.skipSensitive, safeMode: session.safeMode },
+    customLabels: session.customLabels,
+    events: (session.events || []).map(({ status, pageLabel, reason, at, fullPage }) => ({ status, pageLabel, reason, at, fullPage: Boolean(fullPage) })),
+    privacyNote: "Form values, screenshots, case labels, filenames, and full URLs are intentionally excluded."
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(report, null, 2)); let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const downloadId = await chrome.downloads.download({ url: `data:application/json;base64,${btoa(binary)}`, filename: `Page-Capture-support-${timestamp()}.json`, conflictAction: "uniquify", saveAs: true });
+  return { ok: true, downloadId };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     const tabId = Number(message?.tabId ?? sender.tab?.id);
@@ -182,6 +204,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "CAPTURE_VIEWPORT": return { ok: true, dataUrl: await chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "png" }) };
       case "EXPORT_LEDGER": return exportLedger(tabId);
       case "EXPORT_SUMMARY": return exportSummary(tabId);
+      case "EXPORT_SUPPORT": return exportSupportReport(tabId);
       case "OPEN_SESSION_FOLDER": return openSessionFolder(tabId);
       case "REMOVE_CAPTURE": return removeCapture(tabId, message.eventId);
       default: return { ok: false, reason: "Unknown request." };

@@ -23,7 +23,7 @@ test("server-renders the Page Capture landing page", async () => {
   assert.match(html, /Already captured/);
   assert.match(html, /Privacy by default/);
   assert.match(html, /Test lab/);
-  assert.match(html, /Download v0\.6/);
+  assert.match(html, /Download v0\.7/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -52,14 +52,14 @@ test("server-renders the dedicated no-login test lab", async () => {
 
 test("ships the extension package and social preview", async () => {
   await Promise.all([
-    access(new URL("../public/license-page-capture-v0.6.0.zip", import.meta.url)),
+    access(new URL("../public/license-page-capture-v0.7.0.zip", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../extension/manifest.json", import.meta.url)),
   ]);
   const manifest = JSON.parse(await readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"));
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.name, "License Page Capture");
-  assert.equal(manifest.version, "0.6.0");
+  assert.equal(manifest.version, "0.7.0");
 });
 
 test("includes a Vercel server entry for application routes", async () => {
@@ -68,4 +68,18 @@ test("includes a Vercel server entry for application routes", async () => {
   assert.equal(config.outputDirectory, "dist/client");
   assert.match(config.rewrites[0].destination, /api\/site/);
   assert.match(entry, /worker\.fetch/);
+});
+
+test("keeps core website and extension controls accessible", async () => {
+  const [lab, popup, css] = await Promise.all([
+    render("/test-lab").then((response) => response.text()),
+    readFile(new URL("../extension/popup.html", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(lab, /aria-label="Test Lab sections"/);
+  assert.match(lab, /aria-labelledby="output-title"/);
+  assert.match(popup, /role="status"/);
+  assert.match(popup, /aria-live="polite"/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /prefers-reduced-motion/);
 });

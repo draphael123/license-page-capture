@@ -99,6 +99,10 @@ document.addEventListener("keydown", (event) => {
 }, true);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === "PREFLIGHT") {
+    const controls = [...document.querySelectorAll("button, input[type='submit'], input[type='button'], a, [role='button']")].filter((element) => actionMatches(elementText(element), message.customLabels || []));
+    sendResponse({ ok: true, origin: location.origin, pageLabel: pageLabel(), sensitive: Boolean(sensitiveReason()), navigationControls: controls.slice(0, 8).map(elementText) }); return;
+  }
   if (message?.type === "SESSION_STATE") { session = message.session; if (session?.active) showIndicator(`${session.captureCount || 0} pages saved · capture active`, "success", true); else document.getElementById("license-capture-indicator")?.remove(); sendResponse({ ok: true }); return; }
   if (message?.type === "CAPTURE_CURRENT") { requestCapture(Boolean(message.force)).then(sendResponse); return true; }
 });
